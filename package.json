@@ -1,6 +1,6 @@
 {
   "name": "exiftool.pl",
-  "version": "10.25.1",
+  "version": "10.25.2",
   "description": "A distribution of exiftool perl executable.",
   "main": "index.js",
   "scripts": {
