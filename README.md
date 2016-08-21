@@ -2,6 +2,11 @@
 A distribution of _exiftool_ perl executable with lib. Current version is 10.25.
 
 [![npm version](https://badge.fury.io/js/exiftool.pl.svg)](https://badge.fury.io/js/exiftool.pl)
+[![Build Status](https://travis-ci.org/Sobesednik/node-exiftool.pl.svg?branch=master)](https://travis-ci.org/Sobesednik/node-exiftool.pl)
+
+You might also be interested in [dist-exiftool](https://www.npmjs.com/package/dist-exiftool)
+which will install an appropriate version of exiftool depending on the platform, and
+[exiftool.exe](https://www.npmjs.com/package/exiftool.exe) for Windows.
 
 ## Usage
 The module exports a path to the exiftool Perl executable.
