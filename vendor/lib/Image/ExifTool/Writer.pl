@@ -91,6 +91,11 @@ my %dirMap = (
     EXIF => \%exifMap,
 );
 
+# (Note: all writable "pseudo" tags must be found in Extra table)
+my @writablePseudoTags =  qw(
+    FileName FilePermissions Directory FileModifyDate FileCreateDate HardLink TestName
+);
+
 # groups we are allowed to delete
 # Notes:
 # 1) these names must either exist in %dirMap, or be translated in InitWriteDirs())
@@ -178,7 +183,7 @@ my %intRange = (
     'int32s' => [-0x80000000, 0x7fffffff],
 );
 # lookup for file types with block-writable EXIF
-my %blockExifTypes = map { $_ => 1 } qw(JPEG PNG JP2 MIE EXIF);
+my %blockExifTypes = map { $_ => 1 } qw(JPEG PNG JP2 MIE EXIF FLIF);
 
 my $maxSegmentLen = 0xfffd;     # maximum length of data in a JPEG segment
 my $maxXMPLen = $maxSegmentLen; # maximum length of XMP data in JPEG
@@ -464,7 +469,7 @@ sub SetNewValue($;$$%)
         }
         unless ($listOnly) {
             if (not TagExists($tag)) {
-                $err = "Tag '$origTag' does not exist";
+                $err = "Tag '$origTag' is not supported";
                 $err .= ' or has a bad language code' if $origTag =~ /-/;
             } elsif ($langCode) {
                 $err = "Tag '$tag' does not support alternate languages";
@@ -1006,7 +1011,7 @@ WriteAlso:
             } elsif ($foundMatch) {
                 $err = "Sorry, $pre$tag is not writable";
             } else {
-                $err = "Tag '$pre$tag' does not exist";
+                $err = "Tag '$pre$tag' is not supported";
             }
         }
         if ($err) {
@@ -1110,6 +1115,7 @@ sub SetNewValuesFromFile($$;@)
         UserParam       => $$options{UserParam},
         XMPAutoConv     => $$options{XMPAutoConv},
     );
+    $$srcExifTool{GLOBAL_TIME_OFFSET} = $$self{GLOBAL_TIME_OFFSET};
     foreach $tag (@setTags) {
         next if ref $tag;
         if ($tag =~ /^-(.*)/) {
@@ -1527,8 +1533,8 @@ sub CountNewValues($)
     return $num unless wantarray;
     my $pseudo = 0;
     if ($newVal) {
-        # (Note: all writable "pseudo" tags must be found in Extra table)
-        foreach $tag (qw{FileName FilePermissions Directory FileModifyDate FileCreateDate HardLink TestName}) {
+        # count the number of pseudo tags we are writing
+        foreach $tag (@writablePseudoTags) {
             ++$pseudo if defined $$newVal{$Image::ExifTool::Extra{$tag}};
         }
     }
@@ -2082,6 +2088,9 @@ sub WriteInfo($$;$$)
             } elsif ($type eq 'MOV') {
                 require Image::ExifTool::QuickTime;
                 $rtnVal = Image::ExifTool::QuickTime::WriteMOV($self, \%dirInfo);
+            } elsif ($type eq 'FLIF') {
+                require Image::ExifTool::FLIF;
+                $rtnVal = Image::ExifTool::FLIF::WriteFLIF($self, \%dirInfo);
             } elsif ($type eq 'EXIF') {
                 # go through WriteDirectory so block writes, etc are handled
                 my $tagTablePtr = GetTagTable('Image::ExifTool::Exif::Main');
@@ -3497,7 +3506,7 @@ sub InitWriteDirs($$;$)
 # Write an image directory
 # Inputs: 0) ExifTool object reference, 1) source directory information reference
 #         2) tag table reference, 3) optional reference to writing procedure
-# Returns: New directory data or undefined on error
+# Returns: New directory data or undefined on error (or empty string to delete directory)
 sub WriteDirectory($$$;$)
 {
     my ($self, $dirInfo, $tagTablePtr, $writeProc) = @_;
@@ -4137,10 +4146,11 @@ sub NewGUID()
 #         3) flag to allow date-only (YYYY, YYYY:mm or YYYY:mm:dd) or time without seconds
 # Returns: formatted date/time string (or undef and issues warning on error)
 # Notes: currently accepts different separators, but doesn't use DateFormat yet
+my $hasStrptime; # flag for strptime available
 sub InverseDateTime($$;$$)
 {
     my ($self, $val, $tzFlag, $dateOnly) = @_;
-    my ($rtnVal, $tz);
+    my ($rtnVal, $tz, $noStrptime);
     # strip off timezone first if it exists
     if ($val =~ s/([+-])(\d{1,2}):?(\d{2})\s*$//i) {
         $tz = sprintf("$1%.2d:$3", $2);
@@ -4150,6 +4160,51 @@ sub InverseDateTime($$;$$)
         $tz = '';
         # allow special value of 'now'
         return TimeNow($tzFlag) if lc($val) eq 'now';
+    }
+    my $fmt = $$self{OPTIONS}{DateFormat};
+    # only convert date if a format was specified and the date is recognizable
+    if ($fmt) {
+        unless (defined $hasStrptime) {
+            if (eval { require POSIX::strptime }) {
+                $hasStrptime = 1;
+            } elsif (eval { require Time::Piece }) {
+                $hasStrptime = 2;
+            } else {
+                $hasStrptime = 0;
+            }
+        }
+        if ($hasStrptime) {
+            my @a;
+            if ($hasStrptime == 1) {
+                @a = POSIX::strptime($val, $fmt);
+            } else {
+                @a = Time::Piece::_strptime($val, $fmt);
+            }
+            if (defined $a[5] and length $a[5]) {
+                $a[5] += 1900; # add 1900 to year
+            } else {
+                warn "Invalid date/time (no year)\n";
+                return undef;
+            }
+            ++$a[4] if defined $a[4] and length $a[4];  # add 1 to month
+            my $i;
+            foreach $i (0..4) {
+                if (not defined $a[$i] or not length $a[$i]) {
+                    if ($i < 2 or $dateOnly) { # (allow missing minutes/seconds)
+                        $a[$i] = '  ';
+                    } else {
+                        warn("Incomplete date/time specification\n");
+                        return undef;
+                    }
+                } elsif (length($a[$i]) < 2) {
+                    $$a[$i] = "0$a[$i]";# pad to 2 digits if necessary
+                }
+            }
+            $val = join(':', @a[5,4,3]) . ' ' . join(':', @a[2,1,0]);
+        } elsif ($$self{OPTIONS}{StrictDate}) {
+            warn "Install POSIX::strptime to do inverse date/time conversions\n";
+            return undef;
+        }
     }
     if ($val =~ /(\d{4})/g) {           # get YYYY
         my $yr = $1;
@@ -4235,6 +4290,8 @@ sub AssembleRational($$@)
 # - the returned rational will be accurate to at least 8 significant figures if possible
 # - eg. an input of 3.14159265358979 returns a rational of 104348/33215,
 #   which equals    3.14159265392142 and is accurate to 10 significant figures
+# - the returned rational will be reduced to the lowest common denominator except when
+#   the input is a fraction in which case the input is returned unchanged
 # - these routines were a bit tricky, but fun to write!
 sub Rationalize($;$)
 {

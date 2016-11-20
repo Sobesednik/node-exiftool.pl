@@ -26,7 +26,7 @@ use strict;
 use vars qw($VERSION $AUTOLOAD);
 use Image::ExifTool qw(:DataAccess :Utils);
 
-$VERSION = '1.36';
+$VERSION = '1.39';
 
 sub ProcessPNG_tEXt($$$);
 sub ProcessPNG_iTXt($$$);
@@ -244,6 +244,15 @@ $Image::ExifTool::PNG::colorType = -1;
             ProcessProc => \&ProcessPNG_Compressed,
         },
     },
+    # animated PNG (ref https://wiki.mozilla.org/APNG_Specification)
+    acTL => {
+        Name => 'AnimationControl',
+        SubDirectory => {
+            TagTable => 'Image::ExifTool::PNG::AnimationControl',
+        },
+    },
+    # fcTL - animation frame control for each frame
+    # fdAT - animation data for each frame
 );
 
 # PNG IHDR chunk
@@ -537,6 +546,25 @@ my %unreg = ( Notes => 'unregistered' );
     },
 );
 
+# Animation control
+%Image::ExifTool::PNG::AnimationControl = (
+    PROCESS_PROC => \&Image::ExifTool::ProcessBinaryData,
+    GROUPS => { 2 => 'Image' },
+    FORMAT => 'int32u',
+    NOTES => q{
+        Tags found in the Animation Conrol chunk.  See
+        L<https://wiki.mozilla.org/APNG_Specification> for details.
+    },
+    0 => {
+        Name => 'AnimationFrames',
+        RawConv => '$self->OverrideFileType("APNG", undef, "PNG"); $val',
+    },
+    1 => {
+        Name => 'AnimationPlays',
+        PrintConv => '$val || "inf"',
+    },
+);
+
 #------------------------------------------------------------------------------
 # AutoLoad our writer routines when necessary
 #
@@ -671,11 +699,11 @@ sub FoundPNG($$$$;$$$$)
                 DirLen   => $len,
                 DirName  => $dirName,
                 TagInfo  => $tagInfo,
-                ReadOnly => 1, # (only used by WriteXMP)
+                ReadOnly => 1, # (used only by WriteXMP)
                 OutBuff  => $outBuff,
             );
             # no need to re-decompress if already done
-            undef $processProc if $wasCompressed and $processProc eq \&ProcessPNG_Compressed;
+            undef $processProc if $wasCompressed and $processProc and $processProc eq \&ProcessPNG_Compressed;
             # rewrite this directory if necessary (but always process TextualData normally)
             if ($outBuff and not $processProc and $subTable ne \%Image::ExifTool::PNG::TextualData) {
                 return 1 unless $$et{EDIT_DIRS}{$dirName};
@@ -871,7 +899,7 @@ sub ProcessProfile($$$)
             $dir =~ s/_Profile// unless $dir =~ /^ICC/;
             return 1 unless $$editDirs{$dir};
             $$outBuff = $et->WriteDirectory(\%dirInfo, $tagTablePtr);
-            DoneDir($et, $dir, $outBuff);
+            DoneDir($et, $dir, $outBuff, $$tagInfo{NonStandard});
         } else {
             $processed = $et->ProcessDirectory(\%dirInfo, $tagTablePtr);
         }

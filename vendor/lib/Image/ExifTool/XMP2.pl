@@ -1004,6 +1004,7 @@ my %sSubVersion = (
     PickLabel              => { },
     ImageHistory           => { Avoid => 1, Notes => 'different format from EXIF:ImageHistory' },
     LensCorrectionSettings => { },
+    ImageUniqueID          => { Avoid => 1 },
 );
 
 # SWF namespace tags (ref PH)
@@ -1064,6 +1065,11 @@ my %sSubVersion = (
     Curve4y    => { Writable => 'real' },
     Shadows    => { Writable => 'real', Avoid => 1 },
     Highlights => { Writable => 'real', Avoid => 1 },
+    # the following from StarGeek
+    FaceBalanceOrigI    => { Writable => 'real' },
+    FaceBalanceOrigQ    => { Writable => 'real' },
+    FaceBalanceStrength => { Writable => 'real' },
+    FaceBalanceWarmth   => { Writable => 'real' },
 );
 
 # Adobe creatorAtom properties (ref PH)
@@ -1166,6 +1172,7 @@ my %sSubVersion = (
     FullPanoHeightPixels            => { Writable => 'real' },
     CroppedAreaLeftPixels           => { Writable => 'real' },
     CroppedAreaTopPixels            => { Writable => 'real' },
+    InitialCameraDolly              => { Writable => 'real' },
     # (the following have been observed, but are not in the specification)
     LargestValidInteriorRectLeft    => { Writable => 'real' },
     LargestValidInteriorRectTop     => { Writable => 'real' },
@@ -1180,12 +1187,65 @@ my %sSubVersion = (
     NAMESPACE => 'GettyImagesGIFT',
     NOTES => q{
         The actual Getty Images namespace prefix is "GettyImagesGIFT", which is the
-        prefix recorded in the file, but ExifTool shortens this for the "XMP-getty"
-        family 1 group name.
+        prefix recorded in the file, but ExifTool shortens this for the family 1
+        group name.
     },
-    Personality => { },
-    OriginalFilename => { Name => 'OriginalFileName' },
-    ParentMEID => { },
+    Personality         => { },
+    OriginalFilename    => { Name => 'OriginalFileName' },
+    ParentMEID          => { },
+    # the following from StarGeek
+    AssetID             => { },
+    CallForImage        => { },
+    CameraFilename      => { },
+    CameraMakeModel     => { Avoid => 1 },
+    Composition         => { },
+    CameraSerialNumber  => { Avoid => 1 },
+    ExclusiveCoverage   => { },
+    GIFTFtpPriority     => { },
+    ImageRank           => { },
+    MediaEventIdDate    => { },
+    OriginalCreateDateTime => { %dateTimeInfo, Groups => { 2 => 'Time' }, Avoid => 1 },
+    ParentMediaEventID  => { },
+    PrimaryFTP          => { List => 'Bag' },
+    RoutingDestinations => { List => 'Bag' },
+    RoutingExclusions   => { List => 'Bag' },
+    SecondaryFTP        => { List => 'Bag' },
+    TimeShot            => { },
+);
+
+# Google Spherical Images namespace (ref https://github.com/google/spatial-media/blob/master/docs/spherical-video-rfc.md)
+%Image::ExifTool::XMP::GSpherical = (
+    %xmpTableDefaults,
+    WRITABLE => 0,
+    GROUPS => { 1 => 'XMP-GSpherical', 2 => 'Image' },
+    NAMESPACE => 'GSpherical',
+    NOTES => q{
+        Not actually XMP.  These RDF/XML tags are used in Google spherical MP4
+        videos.  See
+        L<https://github.com/google/spatial-media/blob/master/docs/spherical-video-rfc.md>
+        for the specification.
+    },
+    Spherical                   => { },
+    Stitched                    => { },
+    StitchingSoftware           => { },
+    ProjectionType              => { },
+    StereoMode                  => { },
+    SourceCount                 => { },
+    InitialViewHeadingDegrees   => { },
+    InitialViewPitchDegrees     => { },
+    InitialViewRollDegrees      => { },
+    Timestamp                   => {
+        Name => 'TimeStamp',
+        Groups => { 2 => 'Time' },
+        ValueConv => 'ConvertUnixTime($val)', #(NC)
+        PrintConv => '$self->ConvertDateTime($val)',
+    },
+    FullPanoWidthPixels         => { },
+    FullPanoHeightPixels        => { },
+    CroppedAreaImageWidthPixels => { },
+    CroppedAreaImageHeightPixels=> { },
+    CroppedAreaLeftPixels       => { },
+    CroppedAreaTopPixels        => { },
 );
 
 # SVG namespace properties (ref 9)

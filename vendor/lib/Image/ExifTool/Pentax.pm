@@ -57,7 +57,7 @@ use Image::ExifTool::Exif;
 use Image::ExifTool::GPS;
 use Image::ExifTool::HP;
 
-$VERSION = '3.06';
+$VERSION = '3.07';
 
 sub CryptShutterCount($$);
 sub PrintFilter($$$);
@@ -98,7 +98,7 @@ sub DecodeAFPoints($$$$;$);
     # (and 'Sigma 70mm F2.8 EX DG Macro')
     # (and 'Sigma 105mm F2.8 EX DG Macro', ref 24)
     # (and 'Sigma 180mm F4.5 EX DG Macro')
-    '3 17' => 'smc PENTAX-FA SOFT 85mm F2.8',
+    '3 17' => 'smc PENTAX-FA SOFT 85mm F2.8', # (also F version, ref 29)
     '3 18' => 'smc PENTAX-F 1.7X AF ADAPTER',
     '3 19' => 'smc PENTAX-F 24-50mm F4',
     '3 20' => 'smc PENTAX-F 35-80mm F4-5.6',
@@ -177,6 +177,7 @@ sub DecodeAFPoints($$$$;$);
     '4 2' => 'smc PENTAX-FA 80-320mm F4.5-5.6',
     '4 3' => 'smc PENTAX-FA 43mm F1.9 Limited',
     '4 6' => 'smc PENTAX-FA 35-80mm F4-5.6',
+    '4 10' => 'Irix 15mm F2.4', #forum3833
     '4 12' => 'smc PENTAX-FA 50mm F1.4', #17
     '4 15' => 'smc PENTAX-FA 28-105mm F4-5.6 [IF]',
     '4 16' => 'Tamron AF 80-210mm F4-5.6 (178D)', #13
@@ -5694,7 +5695,7 @@ my %binaryDataAttrs = (
         Description => 'Camera Model Name',
         Format => 'string[24]',
     },
-    0x38 => { # (NC)
+    0x38 => { #(NC)
         Name => 'ExposureTime',
         Format => 'int32u',
         ValueConv => '$val ? 10 / $val : 0',
@@ -5705,12 +5706,12 @@ my %binaryDataAttrs = (
         Format => 'rational64u',
         PrintConv => 'sprintf("%.1f",$val)',
     },
-    0x44 => { # (NC)
+    0x44 => { #(NC)
         Name => 'ExposureCompensation',
         Format => 'rational64s',
         PrintConv => '$val ? sprintf("%+.1f", $val) : 0',
     },
-    0x54 => { # (NC)
+    0x54 => { #(NC)
         Name => 'FocalLength',
         Format => 'int32u',
         PrintConv => '"$val mm"',
@@ -5725,7 +5726,7 @@ my %binaryDataAttrs = (
         Format => 'string[24]',
         Groups => { 2 => 'Time' },
     },
-    0xa7 => { # (NC)
+    0xa7 => { #(NC)
         Name => 'ISO',
         Format => 'int32u',
     },
@@ -5837,7 +5838,7 @@ my %binaryDataAttrs = (
         Format => 'string[11]',
         ValueConv => 'Image::ExifTool::Exif::ExifDate($val)',
     },
-    0x173 => { # (NC)
+    0x173 => { #(NC)
         Name => 'AudioCodecID',
         Format => 'string[4]',
     },

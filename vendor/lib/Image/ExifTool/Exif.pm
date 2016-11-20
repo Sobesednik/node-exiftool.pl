@@ -53,7 +53,7 @@ use vars qw($VERSION $AUTOLOAD @formatSize @formatName %formatNumber %intFormat
 use Image::ExifTool qw(:DataAccess :Utils);
 use Image::ExifTool::MakerNotes;
 
-$VERSION = '3.83';
+$VERSION = '3.87';
 
 sub ProcessExif($$$);
 sub WriteExif($$$);
@@ -1364,8 +1364,37 @@ my %sampleFormat = (
             3 => 'Sony Lossless Compressed RAW', #IB
         },
     },
-    0x7035 => 'ChromaticAberrationCorrParams', #forum6509 (Sony A7 ARW)
-    0x7037 => 'DistortionCorrParams', #forum6509 (Sony A7 ARW)
+    # 0x7001 - int16u[1] (in SubIFD of Sony ARW images) - values: 0,1
+    # 0x7010 - int16u[4] (in SubIFD of Sony ARW images) - values: "0 9824 11512 16362","8000 10400 12900 14100"
+    # 0x7011 - int16u[4] (in SubIFD of Sony ARW images) - values: "0 4912 8212 12287","4000 7200 10050 12075"
+    # 0x7020 - int32u[1] (in SubIFD of Sony ARW images) - values: 0,3
+    # 0x7031 - int16u[1] (in SubIFD of Sony ARW images) - values: 256,257
+    0x7032 => {
+        Name => 'LightFalloffParams', #forum7640
+        Notes => 'found in Sony ARW images',
+        Protected => 1,
+        Writable => 'int16s',
+        WriteGroup => 'SubIFD',
+        Count => 17,
+    },
+    # 0x7034 - int16u[1] (in SubIFD of Sony ARW images) - values: 1
+    0x7035 => {
+        Name => 'ChromaticAberrationCorrParams', #forum6509
+        Notes => 'found in Sony ARW images',
+        Protected => 1,
+        Writable => 'int16s',
+        WriteGroup => 'SubIFD',
+        Count => 33,
+    },
+    # 0x7036 - int16u[1] (in SubIFD of Sony ARW images) - values: 0,1,17
+    0x7037 => {
+        Name => 'DistortionCorrParams', #forum6509
+        Notes => 'found in Sony ARW images',
+        Protected => 1,
+        Writable => 'int16s',
+        WriteGroup => 'SubIFD',
+        Count => 17,
+    },
     0x800d => 'ImageID', #10
     0x80a3 => { Name => 'WangTag1', Binary => 1 }, #20
     0x80a4 => { Name => 'WangAnnotation', Binary => 1 },
@@ -1432,7 +1461,7 @@ my %sampleFormat = (
         RawConvInv => '$val . "\0"',
         PrintConvInv => sub {
             my ($val, $self) = @_;
-            # encode if necessary
+            # encode if necessary (not automatic because Format is 'undef')
             my $enc = $self->Options('CharsetEXIF');
             $val = $self->Encode($val,$enc) if $enc and $val !~ /\0/;
             if ($val =~ /(.*?)\s*[\n\r]+\s*(.*)/s) {
@@ -1468,7 +1497,7 @@ my %sampleFormat = (
         Name => 'ExposureTime',
         Writable => 'rational64u',
         PrintConv => 'Image::ExifTool::Exif::PrintExposureTime($val)',
-        PrintConvInv => 'Image::ExifTool::Exif::ConvertFraction($val)',
+        PrintConvInv => '$val',
     },
     0x829d => {
         Name => 'FNumber',
@@ -1851,6 +1880,39 @@ my %sampleFormat = (
         Writable => 'undef',
         Count => -1,
     },
+    0x9010 => {
+        Name => 'OffsetTime',
+        Groups => { 2 => 'Time' },
+        Notes => 'time zone for ModifyDate',
+        Writable => 'string',
+        PrintConvInv => q{
+            return "+00:00" if $val =~ /\d{2}Z$/;
+            return sprintf("%s%.2d:%.2d",$1,$2,$3) if $val =~ /([-+])(\d{1,2}):(\d{2})/;
+            return undef;
+        },
+    },
+    0x9011 => {
+        Name => 'OffsetTimeOriginal',
+        Groups => { 2 => 'Time' },
+        Notes => 'time zone for DateTimeOriginal',
+        Writable => 'string',
+        PrintConvInv => q{
+            return "+00:00" if $val =~ /\d{2}Z$/;
+            return sprintf("%s%.2d:%.2d",$1,$2,$3) if $val =~ /([-+])(\d{1,2}):(\d{2})/;
+            return undef;
+        },
+    },
+    0x9012 => {
+        Name => 'OffsetTimeDigitized',
+        Groups => { 2 => 'Time' },
+        Notes => 'time zone for CreateDate',
+        Writable => 'string',
+        PrintConvInv => q{
+            return "+00:00" if $val =~ /\d{2}Z$/;
+            return sprintf("%s%.2d:%.2d",$1,$2,$3) if $val =~ /([-+])(\d{1,2}):(\d{2})/;
+            return undef;
+        },
+    },
     0x9101 => {
         Name => 'ComponentsConfiguration',
         Format => 'int8u',
@@ -1927,7 +1989,7 @@ my %sampleFormat = (
         Notes => 'called ExposureBiasValue by the EXIF spec.',
         Writable => 'rational64s',
         PrintConv => 'Image::ExifTool::Exif::PrintFraction($val)',
-        PrintConvInv => 'Image::ExifTool::Exif::ConvertFraction($val)',
+        PrintConvInv => '$val',
     },
     0x9205 => {
         Name => 'MaxApertureValue',
@@ -2066,6 +2128,7 @@ my %sampleFormat = (
     0x9290 => {
         Name => 'SubSecTime',
         Groups => { 2 => 'Time' },
+        Notes => 'fractional seconds for ModifyDate',
         Writable => 'string',
         ValueConv => '$val=~s/ +$//; $val', # trim trailing blanks
         # extract fractional seconds from a full date/time value
@@ -2074,6 +2137,7 @@ my %sampleFormat = (
     0x9291 => {
         Name => 'SubSecTimeOriginal',
         Groups => { 2 => 'Time' },
+        Notes => 'fractional seconds for DateTimeOriginal',
         Writable => 'string',
         ValueConv => '$val=~s/ +$//; $val', # trim trailing blanks
         ValueConvInv => '$val=~/^(\d+)\s*$/ ? $1 : ($val=~/\.(\d+)/ ? $1 : undef)',
@@ -2081,6 +2145,7 @@ my %sampleFormat = (
     0x9292 => {
         Name => 'SubSecTimeDigitized',
         Groups => { 2 => 'Time' },
+        Notes => 'fractional seconds for CreateDate',
         Writable => 'string',
         ValueConv => '$val=~s/ +$//; $val', # trim trailing blanks
         ValueConvInv => '$val=~/^(\d+)\s*$/ ? $1 : ($val=~/\.(\d+)/ ? $1 : undef)',
@@ -2106,6 +2171,37 @@ my %sampleFormat = (
         Protected => 1,
         Binary => 1,
         Protected => 1, # (because this can be hundreds of megabytes)
+    },
+    0x9400 => {
+        Name => 'AmbientTemperature',
+        Notes => 'ambient temperature in degrees C, called Temperature by the EXIF spec.',
+        Writable => 'rational64s',
+        PrintConv => '"$val C"',
+        PrintConvInv => '$val=~s/ ?C//; $val',
+    },
+    0x9401 => {
+        Name => 'Humidity',
+        Notes => 'ambient relative humidity in percent',
+        Writable => 'rational64u',
+    },
+    0x9402 => {
+        Name => 'Pressure',
+        Notes => 'air pressure in hPa or mbar',
+        Writable => 'rational64u',
+    },
+    0x9403 => {
+        Name => 'WaterDepth',
+        Notes => 'depth under water in metres, negative for above water',
+        Writable => 'rational64s',
+    },
+    0x9404 => {
+        Name => 'Acceleration',
+        Notes => 'directionless camera acceleration in units of mGal, or 10-5 m/s2',
+        Writable => 'rational64u',
+    },
+    0x9405 => {
+        Name => 'CameraElevationAngle',
+        Writable => 'rational64s',
     },
     0x9c9b => {
         Name => 'XPTitle',
@@ -2208,6 +2304,27 @@ my %sampleFormat = (
             Start => '$val',
             MaxSubdirs => 1,
         },
+    },
+    # the following 4 tags found in SubIFD1 of some Samsung SRW images
+    0xa010 => {
+        Name => 'SamsungRawPointersOffset',
+        IsOffset => 1,
+        OffsetPair => 0xa011,  # point to associated byte count
+    },
+    0xa011 => {
+        Name => 'SamsungRawPointersLength',
+        OffsetPair => 0xa010,  # point to associated offset
+    },
+    0xa101 => {
+        Name => 'SamsungRawByteOrder',
+        Format => 'undef',
+        # this is written incorrectly as string[1], but is "\0\0MM" or "II\0\0"
+        FixedSize => 4,
+        Count => 1,
+    },
+    0xa102 => {
+        Name => 'SamsungRawUnknown',
+        Unknown => 1,
     },
     0xa20b => {
         Name => 'FlashEnergy',
@@ -2640,7 +2757,11 @@ my %sampleFormat = (
 #
     0xc612 => {
         Name => 'DNGVersion',
-        Notes => 'tags 0xc612-0xc7b5 are used in DNG images unless otherwise noted',
+        Notes => q{
+            tags 0xc612-0xc7b5 are defined by the DNG specification unless otherwise
+            noted.  See L<https://helpx.adobe.com/photoshop/digital-negative.html> for
+            the specification
+        },
         Writable => 'int8u',
         WriteGroup => 'IFD0',
         Count => 4,
@@ -3749,6 +3870,25 @@ my %sampleFormat = (
     },
 );
 
+# conversions for Composite SubSec date/time tags
+my %subSecConv = (
+    # @val array: 0) date/time, 1) sub-seconds, 2) time zone offset
+    RawConv => q{
+        my $v;
+        if (defined $val[1] and $val[1]=~/^(\d+)/) {
+            my $subSec = $1;
+            # be careful here just in case the time already contains a timezone (contrary to spec)
+            undef $v unless ($v = $val[0]) =~ s/( \d{2}:\d{2}:\d{2})/$1\.$subSec/;
+        }
+        if (defined $val[2] and $val[0]!~/[-+]/ and $val[2]=~/^([-+])(\d{1,2}):(\d{2})/) {
+            $v = ($v || $val[0]) . sprintf('%s%.2d:%.2d', $1, $2, $3);
+        }
+        return $v;
+    },
+    PrintConv => '$self->ConvertDateTime($val)',
+    PrintConvInv => '$self->InverseDateTime($val)',
+);
+
 # EXIF Composite tags (plus other more general Composite tags)
 %Image::ExifTool::Exif::Composite = (
     GROUPS => { 2 => 'Image' },
@@ -4081,42 +4221,56 @@ my %sampleFormat = (
     SubSecDateTimeOriginal => {
         Description => 'Date/Time Original',
         Groups => { 2 => 'Time' },
+        Writable => 1,
         Require => {
             0 => 'EXIF:DateTimeOriginal',
+        },
+        Desire => {
             1 => 'SubSecTimeOriginal',
+            2 => 'OffsetTimeOriginal',
         },
-        # be careful here just in case there is a timezone following the seconds
-        RawConv => '$val[1]=~/\d/ ? $val : undef',
-        ValueConv => q{
-            $_ = $val[0]; s/( \d{2}:\d{2}:\d{2})/$1\.$val[1]/; $_;
+        WriteAlso => {
+            'EXIF:DateTimeOriginal' => '($val and $val=~/^(\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2})/) ? $1 : undef',
+            'EXIF:SubSecTimeOriginal' => '($val and $val=~/\.(\d+)/) ? $1 : undef',
+            'EXIF:OffsetTimeOriginal' => '($val and $val=~/([-+]\d{2}:\d{2}|Z)$/) ? ($1 eq "Z" ? "+00:00" : $1) : undef',
         },
-        PrintConv => '$self->ConvertDateTime($val)',
+        %subSecConv,
     },
     SubSecCreateDate => {
         Description => 'Create Date',
         Groups => { 2 => 'Time' },
+        Writable => 1,
         Require => {
             0 => 'EXIF:CreateDate',
+        },
+        Desire => {
             1 => 'SubSecTimeDigitized',
+            2 => 'OffsetTimeDigitized',
         },
-        RawConv => '$val[1]=~/\d/ ? $val : undef',
-        ValueConv => q{
-            $_ = $val[0]; s/( \d{2}:\d{2}:\d{2})/$1\.$val[1]/; $_;
+        WriteAlso => {
+            'EXIF:CreateDate' => '($val and $val=~/^(\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2})/) ? $1 : undef',
+            'EXIF:SubSecTimeDigitized' => '($val and $val=~/\.(\d+)/) ? $1 : undef',
+            'EXIF:OffsetTimeDigitized' => '($val and $val=~/([-+]\d{2}:\d{2}|Z)$/) ? ($1 eq "Z" ? "+00:00" : $1) : undef',
         },
-        PrintConv => '$self->ConvertDateTime($val)',
+        %subSecConv,
     },
     SubSecModifyDate => {
         Description => 'Modify Date',
         Groups => { 2 => 'Time' },
+        Writable => 1,
         Require => {
             0 => 'EXIF:ModifyDate',
+        },
+        Desire => {
             1 => 'SubSecTime',
+            2 => 'OffsetTime',
         },
-        RawConv => '$val[1]=~/\d/ ? $val : undef',
-        ValueConv => q{
-            $_ = $val[0]; s/( \d{2}:\d{2}:\d{2})/$1\.$val[1]/; $_;
+        WriteAlso => {
+            'EXIF:ModifyDate' => '($val and $val=~/^(\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2})/) ? $1 : undef',
+            'EXIF:SubSecTime' => '($val and $val=~/\.(\d+)/) ? $1 : undef',
+            'EXIF:OffsetTime' => '($val and $val=~/([-+]\d{2}:\d{2}|Z)$/) ? ($1 eq "Z" ? "+00:00" : $1) : undef',
         },
-        PrintConv => '$self->ConvertDateTime($val)',
+        %subSecConv,
     },
     CFAPattern => {
         Require => {
@@ -4688,18 +4842,21 @@ sub PrintLensID($$@)
         ($shortFocal, $longFocal) = ($1, $2 || $1);
     }
     if ($$et{Make} eq 'SONY') {
-        # patch for Metabones Canon adapters on Sony cameras (ref Jos Roost)
-        # (the Metabones adapters add 0xef00 or 0x7700 to the high byte
-        # for 2-byte LensType values, so we need to adjust for these)
-        if ($lensType != 0xffff) {
+        # Patch for Metabones or other adapters on Sony E-mount cameras (ref Jos Roost)
+        # Metabones Canon EF to E-mount adapters add 0xef00, 0xbc00 or 0x7700 to the
+        # high byte for 2-byte Canon LensType values, so we need to adjust for these.
+        # Offset 0xef00 is also used by Sigma MC-11, Fotodiox and Viltrox EF-E adapters.
+        # Have to exclude A-mount Sigma Filtermatic with 'odd' LensType=0xff00.
+        if ($lensType != 0xffff and $lensType != 0xff00) {
             require Image::ExifTool::Minolta;
             if ($Image::ExifTool::Minolta::metabonesID{$lensType & 0xff00}) {
                 $lensType -= ($lensType >= 0xef00 ? 0xef00 : $lensType >= 0xbc00 ? 0xbc00 : 0x7700);
                 require Image::ExifTool::Canon;
                 $printConv = \%Image::ExifTool::Canon::canonLensTypes;
                 $lensTypePrt = $$printConv{$lensType} if $$printConv{$lensType};
-            # test for Sigma MC-11 adapter with Sigma lens: upper limit cuts off two highest
-            # Sigma lenses, but prevents conflict with old Minolta 25xxx and higher ID's
+            # Test for Sigma MC-11 SA-E adapter with Sigma SA lens using 0x4900 offset.
+            # (upper limit of test cuts off two highest Sigma lenses, but prevents
+            # conflict with old Minolta 25xxx and higher ID's)
             } elsif ($lensType >= 0x4900 and $lensType <= 0x590a) {
                 require Image::ExifTool::Sigma;
                 $lensType -= 0x4900;
@@ -5381,6 +5538,7 @@ sub ProcessExif($$$)
                 if ($newNum and $newNum != $format) {
                     $origFormStr = $formatName[$format] . '[' . $count . ']';
                     $format = $newNum;
+                    $size = $readSize = $$tagInfo{FixedSize} if $$tagInfo{FixedSize};
                     # adjust number of items for new format size
                     $count = int($size / $formatSize[$format]);
                 }

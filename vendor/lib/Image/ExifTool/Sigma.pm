@@ -19,7 +19,7 @@ use strict;
 use vars qw($VERSION %sigmaLensTypes);
 use Image::ExifTool::Exif;
 
-$VERSION = '1.20';
+$VERSION = '1.22';
 
 # sigma LensType lookup (ref IB)
 %sigmaLensTypes = (
@@ -385,7 +385,7 @@ $VERSION = '1.20';
             ValueConvInv => 'IsFloat($val) ? sprintf("Chro:%+.1f",$val) : undef',
         },
         # the SD1 writes something else here (rational64s, value 0/10)
-        # (but we can't test by model becaues Sigma Photo Pro writes this too)
+        # (but we can't test by model because Sigma Photo Pro writes this too)
     ],
     0x001b => [ #PH
         {
@@ -448,7 +448,7 @@ $VERSION = '1.20';
     # 0x001e - int16u: 0, 4, 13 - flash mode for other models?
     0x001e => { #PH
         Name => 'PreviewImageSize',
-        Condition => '$$self{Model} =~ /^SIGMA (DP\d (Merrill|Quattro))$/i',
+        Condition => '$$self{Model} =~ /^(SIGMA (DP\d (Merrill|Quattro))|sd Quattro)$/i',
         Notes => 'only valid for some models',
         Writable => 'int16u',
         Count => 2,
@@ -568,7 +568,7 @@ $VERSION = '1.20';
         Notes => 'models other than the SD1 and Merrill/Quattro models',
         Writable => 'rational64u',
         PrintConv => 'Image::ExifTool::Exif::PrintExposureTime($val)',
-        PrintConvInv => 'Image::ExifTool::Exif::ConvertFraction($val)',
+        PrintConvInv => '$val',
         Priority => 0,
     },
     0x0033 => { #PH
@@ -649,7 +649,7 @@ $VERSION = '1.20';
         Notes => 'SD1 and Merrill/Quattro models only',
         Writable => 'rational64u',
         PrintConv => 'Image::ExifTool::Exif::PrintExposureTime($val)',
-        PrintConvInv => 'Image::ExifTool::Exif::ConvertFraction($val)',
+        PrintConvInv => '$val',
         Priority => 0,
     },
     0x004b => [{ #PH
@@ -712,6 +712,12 @@ $VERSION = '1.20';
         # seen: Standard, Landscape,Monochrome,Neutral,Portrait,Sepia,Vivid
     },
     # 0x005a/b/c - rational64s: 0/10 for the SD1
+    0x0084 => { #PH
+        Name => 'Model',
+        Description => 'Camera Model Name',
+        Writable => 'string',
+    },
+    # 0x0085
 );
 
 1;  # end

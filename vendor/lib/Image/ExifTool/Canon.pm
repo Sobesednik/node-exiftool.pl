@@ -85,7 +85,7 @@ sub ProcessSerialData($$$);
 sub ProcessFilters($$$);
 sub SwapWords($);
 
-$VERSION = '3.65';
+$VERSION = '3.69';
 
 # Note: Removed 'USM' from 'L' lenses since it is redundant - PH
 # (or is it?  Ref 32 shows 5 non-USM L-type lenses)
@@ -197,6 +197,7 @@ $VERSION = '3.65';
     52 => 'Canon EF-S 18-55mm f/3.5-5.6 IS II', #PH
     53 => 'Canon EF-S 18-55mm f/3.5-5.6 III', #Jon Charnas
     54 => 'Canon EF-S 55-250mm f/4-5.6 IS II', #47
+    60 => 'Irix 11mm f/4', #50
     94 => 'Canon TS-E 17mm f/4L', #42
     95 => 'Canon TS-E 24.0mm f/3.5 L II', #43
     124 => 'Canon MP-E 65mm f/2.8 1-5x Macro Photo', #9
@@ -300,11 +301,11 @@ $VERSION = '3.65';
     169.4 => 'Sigma 50mm f/1.4 EX DG HSM', #PH
     169.5 => 'Sigma 85mm f/1.4 EX DG HSM', #Rolando Ruzic
     169.6 => 'Sigma 30mm f/1.4 EX DC HSM', #Rodolfo Borges
-    169.7 => 'Sigma 35mm f/1.4 DG HSM', #PH (also "| A" version, ref forum3833)
+    169.7 => 'Sigma 35mm f/1.4 DG HSM', #PH (also "| A" version, ref 50)
     170 => 'Canon EF 200mm f/2.8L II', #9
     171 => 'Canon EF 300mm f/4L', #15
     172 => 'Canon EF 400mm f/5.6L or Sigma Lens', #32
-    172.1 =>'Sigma 150-600mm f/5-6.3 DG OS HSM | S', #forum3833
+    172.1 =>'Sigma 150-600mm f/5-6.3 DG OS HSM | S', #50
     173 => 'Canon EF 180mm Macro f/3.5L or Sigma Lens', #9
     173.1 => 'Sigma 180mm EX HSM Macro f/3.5', #14
     173.2 => 'Sigma APO Macro 150mm f/2.8 EX DG HSM', #14
@@ -401,7 +402,7 @@ $VERSION = '3.65';
     252 => 'Canon EF 70-200mm f/2.8L IS II USM + 1.4x', #50 (1.4x Mk II)
     253 => 'Canon EF 70-200mm f/2.8L IS II USM + 2x', #PH (NC)
     254 => 'Canon EF 100mm f/2.8L Macro IS USM', #42
-    255 => 'Sigma 24-105mm f/4 DG OS HSM | A or Other Sigma Lens', #50
+    255 => 'Sigma 24-105mm f/4 DG OS HSM | A or Sigma Lens', #50
     255.1 => 'Sigma 180mm f/2.8 EX DG OS HSM APO Macro', #50
     # Note: LensType 488 (0x1e8) is reported as 232 (0xe8) in 7D CameraSettings
     488 => 'Canon EF-S 15-85mm f/3.5-5.6 IS USM', #PH
@@ -422,9 +423,12 @@ $VERSION = '3.65';
     506 => 'Canon EF 400mm f/4 DO IS II USM', #42
     507 => 'Canon EF 16-35mm f/4L IS USM', #42
     508 => 'Canon EF 11-24mm f/4L USM', #PH
-    747 => 'Canon EF 100-400mm f/4.5-5.6L IS II USM', #JR
+    747 => 'Canon EF 100-400mm f/4.5-5.6L IS II USM or Tamron Lens', #JR
+    747.1 => 'Tamron SP 150-600mm F5-6.3 Di VC USD G2', #50
     748 => 'Canon EF 100-400mm f/4.5-5.6L IS II USM + 1.4x', #JR (1.4x Mk III)
     750 => 'Canon EF 35mm f/1.4L II USM', #42
+    751 => 'Canon EF 16-35mm f/2.8L III USM', #42
+    752 => 'Canon EF 24-105mm f/4L IS II USM', #42
     # (STM lenses seem to start with 0x10xx)
     4142 => 'Canon EF-S 18-135mm f/3.5-5.6 IS STM',
     4143 => 'Canon EF-M 18-55mm f/3.5-5.6 IS STM or Tamron Lens',
@@ -441,6 +445,7 @@ $VERSION = '3.65';
     4154 => 'Canon EF-S 24mm f/2.8 STM', #IB
     4155 => 'Canon EF-M 28mm f/3.5 Macro IS STM', #42
     4156 => 'Canon EF 50mm f/1.8 STM', #42
+    4157 => 'Canon EF-M 18-150mm 1:3.5-6.3 IS STM',#42
     36912 => 'Canon EF-S 18-135mm f/3.5-5.6 IS USM', #42
     65535 => 'n/a',
 );
@@ -663,6 +668,7 @@ $VERSION = '3.65';
     0x3890000 => 'PowerShot ELPH 170 IS / IXUS 170',
     0x3910000 => 'PowerShot SX410 IS',
     0x3930000 => 'PowerShot G9 X',
+    0x3940000 => 'EOS M5', #IB
     0x3950000 => 'PowerShot G5 X',
     0x3970000 => 'PowerShot G7 X Mark II',
     0x3990000 => 'PowerShot ELPH 360 HS / IXUS 285 HS / IXY 650',
@@ -672,6 +678,7 @@ $VERSION = '3.65';
     0x4040000 => 'PowerShot G1',
     0x4040001 => 'IXY 180', # ?? (from Canon sample)
     0x4050000 => 'PowerShot SX720 HS',
+    0x4060000 => 'PowerShot SX620 HS',
     0x6040000 => 'PowerShot S100 / Digital IXUS / IXY Digital',
 
 # (see http://cweb.canon.jp/e-support/faq/answer/digitalcamera/10447-1.html for PowerShot/IXUS/IXY names)
@@ -748,7 +755,7 @@ $VERSION = '3.65';
     0x80000298 => 'WFT-E4 II',
     0x80000301 => 'EOS Rebel T4i / 650D / Kiss X6i',
     0x80000302 => 'EOS 6D', #25
-    0x80000324 => 'EOS-1D C', # (NC)
+    0x80000324 => 'EOS-1D C', #(NC)
     0x80000325 => 'EOS 70D',
     0x80000326 => 'EOS Rebel T5i / 700D / Kiss X7i',
     0x80000327 => 'EOS Rebel T5 / 1200D / Kiss X70',
@@ -758,6 +765,7 @@ $VERSION = '3.65';
     0x80000355 => 'EOS M2',
     0x80000346 => 'EOS Rebel SL1 / 100D / Kiss X7',
     0x80000347 => 'EOS Rebel T6s / 760D / 8000D',
+    0x80000349 => 'EOS 5D Mark IV', #42
     0x80000382 => 'EOS 5DS',
     0x80000393 => 'EOS Rebel T6i / 750D / Kiss X8i',
     0x80000401 => 'EOS 5DS R',
@@ -1097,6 +1105,11 @@ my %offOn = ( 0 => 'Off', 1 => 'On' );
             SubDirectory => { TagTable => 'Image::ExifTool::Canon::CameraInfo70D' },
         },
         {
+            Name => 'CanonCameraInfo80D',
+            Condition => '$$self{Model} =~ /EOS 80D$/',
+            SubDirectory => { TagTable => 'Image::ExifTool::Canon::CameraInfo80D' },
+        },
+        {
             Name => 'CanonCameraInfo450D',
             Condition => '$$self{Model} =~ /\b(450D|REBEL XSi|Kiss X2)\b/',
             SubDirectory => { TagTable => 'Image::ExifTool::Canon::CameraInfo450D' },
@@ -1118,8 +1131,23 @@ my %offOn = ( 0 => 'Off', 1 => 'On' );
         },
         {
             Name => 'CanonCameraInfo650D',
-            Condition => '$$self{Model} =~ /\b(650D|REBEL T4i|Kiss X6i|700D|Rebel T5i|Kiss X7i)\b/',
+            Condition => '$$self{Model} =~ /\b(650D|REBEL T4i|Kiss X6i)\b/',
             SubDirectory => { TagTable => 'Image::ExifTool::Canon::CameraInfo650D' },
+        },
+        {
+            Name => 'CanonCameraInfo700D',
+            Condition => '$$self{Model} =~ /\b(700D|REBEL T5i|Kiss X7i)\b/',
+            SubDirectory => { TagTable => 'Image::ExifTool::Canon::CameraInfo650D' },
+        },
+        {
+            Name => 'CanonCameraInfo750D',
+            Condition => '$$self{Model} =~ /\b(750D|Rebel T6i|Kiss X8i)\b/',
+            SubDirectory => { TagTable => 'Image::ExifTool::Canon::CameraInfo750D' },
+        },
+        {
+            Name => 'CanonCameraInfo760D',
+            Condition => '$$self{Model} =~ /\b(760D|Rebel T6s|8000D)\b/',
+            SubDirectory => { TagTable => 'Image::ExifTool::Canon::CameraInfo750D' },
         },
         {
             Name => 'CanonCameraInfo1000D',
@@ -1130,6 +1158,11 @@ my %offOn = ( 0 => 'Off', 1 => 'On' );
             Name => 'CanonCameraInfo1100D',
             Condition => '$$self{Model} =~ /\b(1100D|REBEL T3|Kiss X50)\b/',
             SubDirectory => { TagTable => 'Image::ExifTool::Canon::CameraInfo600D' },
+        },
+        {
+            Name => 'CanonCameraInfo1200D',
+            Condition => '$$self{Model} =~ /\b(1200D|REBEL T5|Kiss X70)\b/',
+            SubDirectory => { TagTable => 'Image::ExifTool::Canon::CameraInfo60D' },
         },
         {
             Name => 'CanonCameraInfoPowerShot',
@@ -4253,16 +4286,16 @@ my %ciMaxFocal = (
     },
 );
 
-# Canon camera information for 60D (MakerNotes tag 0x0d) (ref PH)
+# Canon camera information for 60D/1200D (MakerNotes tag 0x0d) (ref PH)
 # NOTE: Can probably borrow more 50D tags here, possibly with an offset
 %Image::ExifTool::Canon::CameraInfo60D = (
     %binaryDataAttrs,
     FORMAT => 'int8u',
     FIRST_ENTRY => 0,
     PRIORITY => 0,
-    IS_SUBDIR => [ 0x321 ],
+    IS_SUBDIR => [ 0x2f9, 0x321 ],
     GROUPS => { 0 => 'MakerNotes', 2 => 'Camera' },
-    NOTES => 'CameraInfo tags for the EOS 60D.',
+    NOTES => 'CameraInfo tags for the EOS 60D and 1200D.',
     0x03 => { %ciFNumber },
     0x04 => { %ciExposureTime },
     0x06 => { %ciISO },
@@ -4270,6 +4303,8 @@ my %ciMaxFocal = (
     0x1e => { %ciFocalLength },
     0x36 => {
         Name => 'CameraOrientation',
+        Condition => '$$self{Model} =~ /EOS 60D$/', #(NC)
+        Notes => '60D only',
         PrintConv => {
             0 => 'Horizontal (normal)',
             1 => 'Rotate 90 CW',
@@ -4278,14 +4313,20 @@ my %ciMaxFocal = (
     },
     0x55 => {
         Name => 'FocusDistanceUpper',
+        Condition => '$$self{Model} =~ /EOS 60D$/',
+        Notes => '60D only',
         %focusDistanceByteSwap,
     },
     0x57 => {
         Name => 'FocusDistanceLower',
+        Condition => '$$self{Model} =~ /EOS 60D$/',
+        Notes => '60D only',
         %focusDistanceByteSwap,
     },
     0x7d => {
         Name => 'ColorTemperature',
+        Condition => '$$self{Model} =~ /EOS 60D$/',
+        Notes => '60D only',
         Format => 'int16u',
     },
     0xe8 => {
@@ -4297,13 +4338,15 @@ my %ciMaxFocal = (
     },
     0xea => { %ciMinFocal },
     0xec => { %ciMaxFocal },
-    0x199 => {  # (at this location for firmware 2.8.1 and 1.0.5)
+    0x199 => {  # (at this location for 60D firmware 2.8.1/1.0.5, and 1200D 3.3.1/1.0.0)
         Name => 'FirmwareVersion',
         Format => 'string[6]',
         Writable => 0,
     },
     0x1d9 => {
         Name => 'FileIndex',
+        Condition => '$$self{Model} =~ /EOS 60D$/',
+        Notes => '60D only',
         Groups => { 2 => 'Image' },
         Format => 'int32u',
         ValueConv => '$val + 1',
@@ -4311,13 +4354,23 @@ my %ciMaxFocal = (
     },
     0x1e5 => { #(NC)
         Name => 'DirectoryIndex',
+        Condition => '$$self{Model} =~ /EOS 60D$/',
+        Notes => '60D only',
         Groups => { 2 => 'Image' },
         Format => 'int32u',
         ValueConv => '$val - 1',
         ValueConvInv => '$val + 1',
     },
+    0x2f9 => {
+        Name => 'PictureStyleInfo',
+        Condition => '$$self{Model} =~ /\b(1200D|REBEL T5|Kiss X70)\b/',
+        Notes => '1200D',
+        SubDirectory => { TagTable => 'Image::ExifTool::Canon::PSInfo2' },
+    },
     0x321 => {
         Name => 'PictureStyleInfo',
+        Condition => '$$self{Model} =~ /EOS 60D$/',
+        Notes => '60D',
         SubDirectory => { TagTable => 'Image::ExifTool::Canon::PSInfo2' },
     },
 );
@@ -4388,6 +4441,69 @@ my %ciMaxFocal = (
     0x3cf => { #48
         Name => 'PictureStyleInfo',
         SubDirectory => { TagTable => 'Image::ExifTool::Canon::PSInfo2' },
+    },
+);
+
+# Canon camera information for 80D (MakerNotes tag 0x0d) (ref PH)
+%Image::ExifTool::Canon::CameraInfo80D = (
+    %binaryDataAttrs,
+    FORMAT => 'int8u',
+    FIRST_ENTRY => 0,
+    PRIORITY => 0,
+    GROUPS => { 0 => 'MakerNotes', 2 => 'Camera' },
+    NOTES => 'CameraInfo tags for the EOS 70D.',
+    0x03 => { %ciFNumber },
+    0x04 => { %ciExposureTime },
+    0x06 => { %ciISO },
+    0x1b => { %ciCameraTemperature },
+    0x23 => { %ciFocalLength },
+    0x96 => {
+        Name => 'CameraOrientation',
+        PrintConv => {
+            0 => 'Horizontal (normal)',
+            1 => 'Rotate 90 CW',
+            2 => 'Rotate 270 CW',
+        },
+    },
+    0xa5 => {
+        Name => 'FocusDistanceUpper',
+        %focusDistanceByteSwap,
+    },
+    0xa7 => {
+        Name => 'FocusDistanceLower',
+        %focusDistanceByteSwap,
+    },
+    0x13a => {
+        Name => 'ColorTemperature',
+        Format => 'int16u',
+    },
+    0x189 => {
+        Name => 'LensType',
+        Format => 'int16uRev', # value is big-endian
+        SeparateTable => 1,
+        ValueConvInv => 'int($val)', # (must truncate decimal part)
+        PrintConv => \%canonLensTypes,
+    },
+    0x18b => { %ciMinFocal },
+    0x18d => { %ciMaxFocal },
+    0x45a => {  # (at this location for firmware 1.0.1)
+        Name => 'FirmwareVersion',
+        Format => 'string[6]',
+        Writable => 0,
+    },
+    0x4ae => {
+        Name => 'FileIndex',
+        Groups => { 2 => 'Image' },
+        Format => 'int32u',
+        ValueConv => '$val + 1',
+        ValueConvInv => '$val - 1',
+    },
+    0x4ba => { #(NC)
+        Name => 'DirectoryIndex',
+        Groups => { 2 => 'Image' },
+        Format => 'int32u',
+        ValueConv => '$val - 1',
+        ValueConvInv => '$val + 1',
     },
 );
 
@@ -4784,7 +4900,7 @@ my %ciMaxFocal = (
     },
 );
 
-# Canon camera information for 650D (MakerNotes tag 0x0d) (ref PH)
+# Canon camera information for 650D/700D (MakerNotes tag 0x0d) (ref PH)
 %Image::ExifTool::Canon::CameraInfo650D = (
     %binaryDataAttrs,
     FORMAT => 'int8u',
@@ -4850,13 +4966,13 @@ my %ciMaxFocal = (
     },
     0x220 => { # (700D version 1.1.1/2.1.1)
         Name => 'FirmwareVersion',
-        Condition => '$$self{Model} =~ /(700D|Rebel T5i|Kiss X7i)\b/',
+        Condition => '$$self{Model} =~ /(700D|REBEL T5i|Kiss X7i)\b/',
         Notes => '700D',
         Format => 'string[6]',
         Writable => 0,
         RawConv => '$val=~/^\d+\.\d+\.\d+\s*$/ ? $val : undef',
     },
-    0x270 => { # (NC)
+    0x270 => { #(NC)
         Name => 'FileIndex',
         Condition => '$$self{Model} =~ /(650D|REBEL T4i|Kiss X6i)\b/',
         Notes => '650D',
@@ -4865,16 +4981,16 @@ my %ciMaxFocal = (
         ValueConv => '$val + 1',
         ValueConvInv => '$val - 1',
     },
-    0x274 => { # (NC)
+    0x274 => { #(NC)
         Name => 'FileIndex',
-        Condition => '$$self{Model} =~ /(700D|Rebel T5i|Kiss X7i)\b/',
+        Condition => '$$self{Model} =~ /(700D|REBEL T5i|Kiss X7i)\b/',
         Notes => '700D',
         Groups => { 2 => 'Image' },
         Format => 'int32u',
         ValueConv => '$val + 1',
         ValueConvInv => '$val - 1',
     },
-    0x27c => { # (NC)
+    0x27c => { #(NC)
         Name => 'DirectoryIndex',
         Condition => '$$self{Model} =~ /(650D|REBEL T4i|Kiss X6i)\b/',
         Notes => '650D',
@@ -4883,9 +4999,9 @@ my %ciMaxFocal = (
         ValueConv => '$val - 1',
         ValueConvInv => '$val + 1',
     },
-    0x280 => { # (NC)
+    0x280 => { #(NC)
         Name => 'DirectoryIndex',
-        Condition => '$$self{Model} =~ /(700D|Rebel T5i|Kiss X7i)\b/',
+        Condition => '$$self{Model} =~ /(700D|REBEL T5i|Kiss X7i)\b/',
         Notes => '700D',
         Groups => { 2 => 'Image' },
         Format => 'int32u',
@@ -4895,6 +5011,66 @@ my %ciMaxFocal = (
     0x390 => {
         Name => 'PictureStyleInfo',
         SubDirectory => { TagTable => 'Image::ExifTool::Canon::PSInfo2' },
+    },
+);
+
+# Canon camera information for 750D/760D (MakerNotes tag 0x0d) (ref PH)
+%Image::ExifTool::Canon::CameraInfo750D = (
+    %binaryDataAttrs,
+    FORMAT => 'int8u',
+    FIRST_ENTRY => 0,
+    PRIORITY => 0,
+    GROUPS => { 0 => 'MakerNotes', 2 => 'Camera' },
+    NOTES => 'CameraInfo tags for the EOS 750D and 760D.',
+    0x03 => { %ciFNumber },
+    0x04 => { %ciExposureTime },
+    0x06 => { %ciISO },
+    0x1b => { %ciCameraTemperature }, # (700D + 0)
+    0x23 => { %ciFocalLength }, # (700D + 0)
+    0xa5 => { # (700D + 0x19)
+        Name => 'FocusDistanceUpper',
+        %focusDistanceByteSwap,
+    },
+    0xa7 => { # (700D + 0x19)
+        Name => 'FocusDistanceLower',
+        %focusDistanceByteSwap,
+    },
+    0x131 => { # (700D + 0x19)
+        Name => 'WhiteBalance',
+        Format => 'int16u',
+        SeparateTable => 1,
+        PrintConv => \%canonWhiteBalance,
+    },
+    0x135 => {
+        Name => 'ColorTemperature',
+        Format => 'int16u',
+    },
+    0x169 => {
+        Name => 'PictureStyle',
+        Format => 'int8u',
+        Flags => ['PrintHex','SeparateTable'],
+        PrintConv => \%pictureStyles,
+    },
+    0x184 => {
+        Name => 'LensType',
+        Format => 'int16uRev', # value is big-endian
+        SeparateTable => 1,
+        ValueConvInv => 'int($val)', # (must truncate decimal part)
+        PrintConv => \%canonLensTypes,
+    },
+    0x186 => { %ciMinFocal },
+    0x188 => { %ciMaxFocal },
+    0x43d => { # (750D/760D firmware 6.7.2)
+        Name => 'FirmwareVersion',
+        Format => 'string[6]',
+        Writable => 0,
+        RawConv => '$val=~/^\d+\.\d+\.\d+\s*$/ ? $val : undef',
+    },
+    0x449 => { # (750D/760D firmware 1.0.0)
+        Name => 'FirmwareVersion',
+        Format => 'string[6]',
+        Writable => 0,
+        RawConv => '$val=~/^\d+\.\d+\.\d+\s*$/ ? $val : undef',
     },
 );
 
@@ -5945,7 +6121,7 @@ my %ciMaxFocal = (
             31 => 'Anchorage',      # [-9]
             32 => 'Honolulu',       # [-10]
             33 => 'Samoa',          # [+13]
-            32766 => '(not set)',   # (NC)
+            32766 => '(not set)',   #(NC)
         },
     },
     3 => {
@@ -7746,6 +7922,8 @@ my %filterConv = (
     10 => { #52
         Name => 'AutoAFPointSelEOSiTRAF',
         Description => 'Auto AF Point Sel EOS iTR AF',
+        # valid for: 1DX, 1DXmkII, 7DmkII, 5DS, 5DSR
+        # not valid for: 5DmkIII
         Notes => 'only valid for some models',
         Condition => '$$self{Model} !~ /5D /',
         PrintConv => {
@@ -7763,12 +7941,12 @@ my %filterConv = (
     12 => { #52
         Name => 'SelectAFAreaSelectionMode',
         PrintConv => { BITMASK => {
-            0 => 'Single pt',
+            0 => 'Single-point AF',
             1 => 'Auto', # (61 point)
-            2 => 'Zone',
-            3 => 'Expand area 4pt',
-            4 => 'Spot',
-            5 => 'Expand area 8pt',
+            2 => 'Zone AF',
+            3 => 'AF Point Expansion (4 point)',
+            4 => 'Spot AF',
+            5 => 'AF Point Expansion (8 point)',
         }},
     },
     13 => { #52

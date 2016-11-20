@@ -31,7 +31,7 @@ use Image::ExifTool qw(:DataAccess :Utils);
 use Image::ExifTool::Exif;
 use Image::ExifTool::Minolta;
 
-$VERSION = '2.41';
+$VERSION = '2.47';
 
 sub ProcessSRF($$$);
 sub ProcessSR2($$$);
@@ -69,8 +69,9 @@ my %sonyLensTypes2 = (
     32787 => 'Sony E 18-200mm F3.5-6.3 OSS',    # VX9103
     32788 => 'Sony E 30mm F3.5 Macro',          # VX9104
     32789 => 'Sony E 24mm F1.8 ZA or Samyang AF 50mm F1.4 FE', # VX9105
-    32789.1 => 'Samyang AF 50mm F1.4 FE', 
-    32790 => 'Sony E 50mm F1.8 OSS',            # VX9106
+    32789.1 => 'Samyang AF 50mm F1.4 FE',
+    32790 => 'Sony E 50mm F1.8 OSS or Samyang AF 14mm F2.8 FE', # VX9106
+    32790.1 => 'Samyang AF 14mm F2.8 FE',
     32791 => 'Sony E 16-70mm F4 ZA OSS',        # VX9107
     32792 => 'Sony E 10-18mm F4 OSS',           # VX9108
     32793 => 'Sony E PZ 16-50mm F3.5-5.6 OSS',  # VX9109
@@ -90,7 +91,7 @@ my %sonyLensTypes2 = (
 
     32810 => 'Sony FE 70-200mm F4 G OSS', #JR   # VX9126
     32811 => 'Sony FE 16-35mm F4 ZA OSS', #JR   # VX9127
-
+    32812 => 'Sony FE 50mm F2.8 Macro', #JR
     32813 => 'Sony FE 28-70mm F3.5-5.6 OSS',    # VX9129
     32814 => 'Sony FE 35mm F1.4 ZA',            # VX?
     32815 => 'Sony FE 24-240mm F3.5-6.3 OSS',   # VX?
@@ -107,6 +108,9 @@ my %sonyLensTypes2 = (
     32828 => 'Sony FE 70-300mm F4.5-5.6 G OSS', #JR
     32830 => 'Sony FE 70-200mm F2.8 GM OSS', #JR
 
+    33072 => 'Sony FE 70-200mm F2.8 GM OSS + 1.4X Teleconverter', #JR
+    33073 => 'Sony FE 70-200mm F2.8 GM OSS + 2X Teleconverter', #JR
+
     49201 => 'Zeiss Touit 12mm F2.8', #JR (lens firmware Ver.02)
     49202 => 'Zeiss Touit 32mm F1.8', #JR (lens firmware Ver.02)
     49203 => 'Zeiss Touit 50mm F2.8 Macro', #JR (lens firmware Ver.02)
@@ -116,6 +120,7 @@ my %sonyLensTypes2 = (
     49232 => 'Zeiss Loxia 50mm F2', #JR (lens firmware Ver.02)
     49233 => 'Zeiss Loxia 35mm F2', #JR (lens firmware Ver.02)
     49234 => 'Zeiss Loxia 21mm F2.8', #PH
+    49235 => 'Zeiss Loxia 85mm F2.4', #JR
 
     50480 => 'Sigma 30mm F1.4 DC DN | C 016', #IB/JR
     50481 => 'Sigma 50mm F1.4 DG HSM | A 014 + MC-11', #JR
@@ -131,9 +136,11 @@ my %sonyLensTypes2 = (
     50493 => 'Sigma 17-70mm F2.8-4 DC MACRO OS HSM | C 013 + MC-11', #JR
     50495 => 'Sigma 50-100mm F1.8 DC HSM | A 016 + MC-11', #JR
 
+    50993 => 'Voigtlander HELIAR-HYPER WIDE 10mm F5.6', #IB
+    50994 => 'Voigtlander HELIAR-HYPER WIDE 12mm F5.6 III Aspherical', #IB (LensType2 has this value, but unfortunately LensType3 is 50993 for this lens!)
+
     # lenses listed in the Sigma MC-11 list, but not yet seen:
     # 504xx => 'Sigma 18-200mm F3.5-6.3 DC MACRO OS HSM | C 014 + MC-11',
-    # 504xx => 'Sigma 18-300mm F3.5-6.3 DC MACRO OS HSM | C 014 + MC-11',
     # 504xx => 'Sigma 24mm F1.4 DG HSM | A 015 + MC-11',
     # 504xx => 'Sigma 30mm F1.4 DC HSM | A 013 + MC-11',
 );
@@ -857,7 +864,7 @@ my %meterInfo2 = (
         SubDirectory => { TagTable => 'Image::ExifTool::Sony::Tag2010g' },
     },{
         Name => 'Tag2010h', # ?
-        Condition => '$$self{Model} =~ /^(DSC-(RX1RM2|RX10M2|RX10M3|RX100M4|HX90V|WX500)|ILCE-(6300|7RM2|7SM2))\b/',
+        Condition => '$$self{Model} =~ /^(DSC-(RX1RM2|RX10M2|RX10M3|RX100M4|RX100M5|HX90V|WX500)|ILCE-(6300|6500|7RM2|7SM2)|ILCA-99M2)\b/',
         SubDirectory => { TagTable => 'Image::ExifTool::Sony::Tag2010h' },
     },{
         Name => 'Tag_0x2010',
@@ -1002,7 +1009,7 @@ my %meterInfo2 = (
         Writable => 'int8u',
         PrintConvColumns => 2,
         PrintConv => {
-            0 => 'Auto', # (NC)
+            0 => 'Auto', #(NC)
             1 => 'Center',
             2 => 'Top',
             3 => 'Upper-right',
@@ -1295,8 +1302,8 @@ my %meterInfo2 = (
         #     PrintConv => {
         #         0 => 'Disabled', # seen for Panorama images
         #         1 => 'Auto',
-        #         3 => 'Lv1', #NC
-        #         4 => 'Lv2', #NC
+        #         3 => 'Lv1', #(NC)
+        #         4 => 'Lv2', #(NC)
         #         5 => 'Lv3',
         #         6 => 'Lv4',
         #         7 => 'Lv5',
@@ -1546,8 +1553,11 @@ my %meterInfo2 = (
             347 => 'ILCE-7RM2', #JR
             350 => 'ILCE-7SM2', #JR
             353 => 'ILCA-68', #IB
+            354 => 'ILCA-99M2', #JR
             355 => 'DSC-RX10M3', #PH
+            356 => 'DSC-RX100M5', #IB/JR
             357 => 'ILCE-6300', #IB
+            360 => 'ILCE-6500', #JR
         },
     },
     0xb020 => { #2
@@ -1794,7 +1804,7 @@ my %meterInfo2 = (
         PrintConv => {
             0 => 'Multi',
             1 => 'Center',
-            2 => 'Spot', # (NC) seen for DSC-WX9
+            2 => 'Spot', #(NC) seen for DSC-WX9
             3 => 'Flexible Spot',
             10 => 'Selective (for Miniature effect)', # seen for Miniature effect of DSC-WX30
             14 => 'Tracking',
@@ -2090,21 +2100,21 @@ my %meterInfo2 = (
             1 => 'Left',
             2 => 'Lower-left',
             3 => 'Far Left',
-            4 => 'Bottom Assist-left', #NC
+            4 => 'Bottom Assist-left', #(NC)
             5 => 'Bottom',
-            6 => 'Bottom Assist-right', #NC
+            6 => 'Bottom Assist-right', #(NC)
             # values 7-14: 8 center points: 4 from double-cross + 4 assist; 7-10 appear horizontal, 11-14 vertical
-            7  => 'Center (7)', #NC
+            7  => 'Center (7)', #(NC)
             8  => 'Center (horizontal)',
-            9  => 'Center (9)', #NC
-            10 => 'Center (10)', #NC
-            11 => 'Center (11)', #NC
-            12 => 'Center (12)', #NC
+            9  => 'Center (9)', #(NC)
+            10 => 'Center (10)', #(NC)
+            11 => 'Center (11)', #(NC)
+            12 => 'Center (12)', #(NC)
             13 => 'Center (vertical)',
-            14 => 'Center (14)', #NC
-            15 => 'Top Assist-left', #NC
+            14 => 'Center (14)', #(NC)
+            15 => 'Top Assist-left', #(NC)
             16 => 'Top',
-            17 => 'Top Assist-right', #NC
+            17 => 'Top Assist-right', #(NC)
             18 => 'Far Right',
             19 => 'Upper-right',
             20 => 'Right',
@@ -2931,7 +2941,7 @@ my %meterInfo2 = (
             18 => 'AF-C',
             19 => 'AF-A',
             32 => 'Manual',
-            48 => 'DMF', # (NC) (seen for NEX-5)
+            48 => 'DMF', #(NC) (seen for NEX-5)
         },
     },
     0x15 => {
@@ -4480,7 +4490,7 @@ my %faceInfo = (
             18 => 'AF-C',
             19 => 'AF-A',
             32 => 'Manual',
-            48 => 'DMF', # (NC) (seen for NEX-5)
+            48 => 'DMF', #(NC) (seen for NEX-5)
         },
     },
     0x07 => { #JR
@@ -5019,7 +5029,7 @@ my %faceInfo = (
         Condition => '$$self{Model} =~ /^DSLR-(A450|A500|A550)$/',
         Notes => 'A450, A500 and A550',
         Format => 'int16u',
-        Mask => 0x03ff, # (NC)
+        Mask => 0x03ff, #(NC)
         PrintConv => 'sprintf("%.3d",$val)',
         PrintConvInv => '$val',
     },
@@ -5050,7 +5060,7 @@ my %faceInfo = (
         Name => 'LensType2',
         Condition => '($$self{Model} =~ /^NEX-/) and ($$self{LensMount} != 1)',
         Format => 'int16u',
-        SeparateTable => 1,
+        SeparateTable => 'LensType2',
         PrintConv => \%sonyLensTypes2,
     },
     0x400 => { #JR
@@ -5066,7 +5076,7 @@ my %faceInfo = (
         Name => 'FolderNumber',
         Condition => '$$self{Model} =~ /^DSLR-(A450|A500|A550)$/',
         Format => 'int16u',
-        Mask => 0x03ff, # (NC)
+        Mask => 0x03ff, #(NC)
         Notes => 'A450, A500 and A550',
         PrintConv => 'sprintf("%.3d",$val)',
         PrintConvInv => '$val',
@@ -5333,7 +5343,7 @@ my %faceInfo = (
             0x00 =>  'Horizontal (normal)',
             0x40 =>  'Rotate 90 CW',
             0x80 =>  'Rotate 270 CW',
-            0xc0 =>  'Rotate 180', # (NC)
+            0xc0 =>  'Rotate 180', #(NC)
         },
 
     }],
@@ -6009,7 +6019,7 @@ my %pictureProfile2010 = (
         Name => 'LensType2',
         Condition => '$$self{LensMount} == 2',
         Format => 'int16u',
-        SeparateTable => 1,
+        SeparateTable => 'LensType2',
         PrintConv => \%sonyLensTypes2,
     },
     0x1896 => {
@@ -6200,7 +6210,7 @@ my %pictureProfile2010 = (
         Name => 'LensType2',
         Condition => '$$self{LensMount} == 2',
         Format => 'int16u',
-        SeparateTable => 1,
+        SeparateTable => 'LensType2',
         PrintConv => \%sonyLensTypes2,
     },
     0x18c2 => {
@@ -6282,6 +6292,14 @@ my %pictureProfile2010 = (
     0x0388 => {
         Name => 'MeterInfo',
         Format => 'int32u[486]',
+        Condition => '$$self{Model} !~ /^(ILCA-99M2|ILCE-6500|DSC-RX100M5)/',
+        Unknown => 1,
+        SubDirectory => { TagTable => 'Image::ExifTool::Sony::MeterInfo' },
+    },
+    0x0398 => {
+        Name => 'MeterInfo',
+        Format => 'int32u[486]',
+        Condition => '$$self{Model} =~ /^(ILCA-99M2|ILCE-6500|DSC-RX100M5)/',
         Unknown => 1,
         SubDirectory => { TagTable => 'Image::ExifTool::Sony::MeterInfo' },
     },
@@ -6316,7 +6334,7 @@ my %pictureProfile2010 = (
         Name => 'LensType2',
         Condition => '$$self{LensMount} == 2',
         Format => 'int16u',
-        SeparateTable => 1,
+        SeparateTable => 'LensType2',
         PrintConv => \%sonyLensTypes2,
     },
     0x18f2 => {
@@ -6593,13 +6611,13 @@ my %pictureProfile2010 = (
         %releaseMode2,
     },
     0x007c => { #JR valid for ILCE and most NEX
-        Name => 'InternalSerialNumber', # (NC)
+        Name => 'InternalSerialNumber', #(NC)
         Condition => '$$self{Model} !~ /^(DSC-|Stellar|Lunar|NEX-(5N|7|VG20E)|SLT-|HV|ILCA-|ILCE-(6300|7RM2|7SM2))/',
         Format => 'int8u[4]',
         PrintConv => 'unpack "H*", pack "C*", split " ", $val',
     },
     0x00f0 => { #JR valid for SLT/ILCA models
-        Name => 'InternalSerialNumber', # (NC)
+        Name => 'InternalSerialNumber', #(NC)
         Condition => '$$self{Model} =~ /^(SLT-|HV|ILCA-)/',
         Format => 'int8u[5]',
         PrintConv => 'unpack "H*", pack "C*", split " ", $val',
@@ -6686,7 +6704,7 @@ my %pictureProfile2010 = (
         %releaseMode2,
     },
     0x0088 => {
-        Name => 'InternalSerialNumber', # (NC)
+        Name => 'InternalSerialNumber', #(NC)
         Condition => '$$self{Model} =~ /^(ILCE-(6300|7RM2|7SM2))/',
         Format => 'int8u[6]',
         PrintConv => 'unpack "H*", pack "C*", split " ", $val',
@@ -6718,7 +6736,7 @@ my %pictureProfile2010 = (
         Name => 'LensType2',
         Condition => '$$self{LensMount} == 2',
         Format => 'int16u',
-        SeparateTable => 1,
+        SeparateTable => 'LensType2',
         PrintConv => \%sonyLensTypes2,
     },
     # 0x0108 - 128 for Sony E-mount lenses, 0 for all other
@@ -7108,7 +7126,7 @@ my %pictureProfile2010 = (
         PrintConv => {
             0 => 'Multi', # newer DSC/ILC use name 'Wide'
             1 => 'Center',
-            2 => 'Spot', # (NC) seen for DSC-WX300
+            2 => 'Spot', #(NC) seen for DSC-WX300
             3 => 'Flexible Spot',
             10 => 'Selective (for Miniature effect)', # seen for DSC-HX30V,TX30,WX60,WX100
             11 => 'Zone', #JR (ILCE-7 series)
@@ -7283,7 +7301,7 @@ my %pictureProfile2010 = (
         Condition => '$$self{LensMount} == 2',
         Format => 'int16u',
         Notes => 'E-mount lenses',
-        SeparateTable => 1,
+        SeparateTable => 'LensType2',
         PrintConv => \%sonyLensTypes2,
     },
     0x0608 => {
@@ -7343,7 +7361,7 @@ my %pictureProfile2010 = (
         Name => 'ExposureTime',
         Format => 'rational32u',
         PrintConv => '$val ? Image::ExifTool::Exif::PrintExposureTime($val) : "Bulb"', # (Bulb NC)
-        PrintConvInv => 'lc($val) eq "bulb" ? 0 : Image::ExifTool::Exif::ConvertFraction($val)',
+        PrintConvInv => 'lc($val) eq "bulb" ? 0 : $val',
     },
     0x0014 => { # but often odd results for DSC models: exclude
         Name => 'SonyFNumber',
@@ -7438,7 +7456,7 @@ my %pictureProfile2010 = (
         Condition => '$$self{LensMount} == 2',
         Format => 'int16u',
         Notes => 'E-mount lenses',
-        SeparateTable => 1,
+        SeparateTable => 'LensType2',
         PrintConv => \%sonyLensTypes2,
     },
     0x0062 => {
@@ -7608,7 +7626,7 @@ my %pictureProfile2010 = (
         Name => 'LensType3',
         RawConv => '(($$self{LensMount} != 0) or ($val > 0 and $val < 32784)) ? $val : undef',
         Format => 'int16u',
-        SeparateTable => 1,
+        SeparateTable => 'LensType2',
         PrintConv => \%sonyLensTypes2,
     },
     0x000b => {
@@ -7928,7 +7946,7 @@ my %pictureProfile2010 = (
             1 => 'Center',
             2 => 'Flexible Spot',
             3 => 'Zone',
-            4 => 'Expanded Flexible Spot', # (NC)
+            4 => 'Expanded Flexible Spot', #(NC)
         },
     },
     0x003b => {
@@ -8298,7 +8316,7 @@ my %pictureProfile2010 = (
         rotation -- the width is always the longer dimension.
     },
     # 0: 257 for panorama images, 0 for all other images (ref JR)
-    1 => 'PanoramaFullWidth', # (including black/grey borders)
+    1 => 'PanoramaFullWidth', # (including black/gray borders)
     2 => 'PanoramaFullHeight',
     3 => {
         Name => 'PanoramaDirection',
@@ -8307,7 +8325,7 @@ my %pictureProfile2010 = (
             1 => 'Right or Down',
         },
     },
-    # crop area to remove black/grey borders from full image
+    # crop area to remove black/gray borders from full image
     4 => 'PanoramaCropLeft',
     5 => 'PanoramaCropTop', #PH guess (NC)
     6 => 'PanoramaCropRight',
@@ -8508,6 +8526,7 @@ my %pictureProfile2010 = (
     0x782c => 'WB_RGBLevels3200K', #IB
     0x782d => 'WB_RGBLevels2500K', #IB
     0x787f => 'WhiteLevel', #IB (divide by 4)
+    0x797d => 'LightFalloffParams', #forum7640
     0x7980 => 'ChromaticAberrationCorrParams', #forum6509 (Sony A7 ARW)
     0x7982 => 'DistortionCorrParams', #forum6509 (Sony A7 ARW)
 );
