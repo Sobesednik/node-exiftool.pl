@@ -38,7 +38,7 @@ my %mandatory = (
         0x0128 => 2,        # ResolutionUnit (inches)
     },
     ExifIFD => {
-        0x9000 => '0230',   # ExifVersion
+        0x9000 => '0231',   # ExifVersion
         0x9101 => "1 2 3 0",# ComponentsConfiguration
         0xa000 => '0100',   # FlashpixVersion
         0xa001 => 0xffff,   # ColorSpace (uncalibrated)
@@ -553,11 +553,12 @@ sub WriteExif($$$)
                     # need value to evaluate the condition
                     my $val = $et->GetNewValue($tagInfo);
                     # must convert to binary for evaluating in Condition
-                    if ($$tagInfo{Format} and defined $val) {
-                        $val = WriteValue($val, $$tagInfo{Format}, $$tagInfo{Count});
+                    my $fmt = $$tagInfo{Writable} || $$tagInfo{Format};
+                    if ($fmt and defined $val) {
+                        $val = WriteValue($val, $fmt, $$tagInfo{Count});
                     }
                     if (defined $val) {
-                        my $fmt = $$tagInfo{Writable} || $$tagInfo{Format} || 'undef';
+                        $fmt or $fmt = 'undef';
                         my $cnt = $$tagInfo{Count} || 1;
                         # always use old format/count for Condition in maker notes
                         if ($inMakerNotes) {
@@ -952,6 +953,10 @@ Entry:  for (;;) {
                                 # we aren't reading in a standard EXIF format, so rewrite in old format
                                 $readFormName = $oldFormName;
                                 $readFormat = $oldFormat;
+                            }
+                            if ($$oldInfo{FixedSize}) {
+                                $oldSize = $$oldInfo{FixedSize} if $$oldInfo{FixedSize};
+                                $oldValue = substr($$valueDataPt, $valuePtr, $oldSize);
                             }
                             # adjust number of items to read if format size changed
                             $readCount = $oldSize / $formatSize[$readFormat];
@@ -1781,7 +1786,8 @@ NoOverwrite:            next if $isNew > 0;
             my $newSize = length($$newValuePt);
             my $fsize = $formatSize[$newFormat];
             my $offsetVal;
-            $newCount = int(($newSize + $fsize - 1) / $fsize);  # set proper count
+            # set proper count
+            $newCount = int(($newSize + $fsize - 1) / $fsize) unless $oldInfo and $$oldInfo{FixedSize};
             if ($newSize > 4) {
                 # zero-pad to an even number of bytes (required by EXIF standard)
                 # and make sure we are a multiple of the format size
