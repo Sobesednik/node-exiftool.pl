@@ -18,11 +18,11 @@ Twenty-five special keys (TABLE_NAME, SHORT_NAME, PROCESS_PROC, WRITE_PROC,
 CHECK_PROC, GROUPS, FORMAT, FIRST_ENTRY, TAG_PREFIX, PRINT_CONV, WRITABLE,
 TABLE_DESC, NOTES, IS_OFFSET, IS_SUBDIR, EXTRACT_UNKNOWN, NAMESPACE, PREFERRED,
 SRC_TABLE, PRIORITY, WRITE_GROUP, LANG_INFO, VARS, DATAMEMBER and SET_GROUP1)
-are used to provide additional information about a table. The special keys have
+are used to provide additional information about a table.  The special keys have
 names that are all capitalized to avoid possible conflicts with tag keys.  Below
 is an explanation of the meaning of each special key:
 
-  TABLE_NAME : Name of this table (set by GetTagTable()).
+  TABLE_NAME : Name of this table (set automatically by GetTagTable()).
 
   SHORT_NAME : Table name with leading "Image::ExifTool::" removed.
 
@@ -70,8 +70,8 @@ is an explanation of the meaning of each special key:
   according to the name of the module.
 
   FORMAT : Specifies the default tag Format, and corresponding pointer increment
-  for entries in a BinaryData table.  Defaults to 'int8u' if not specified.  The
-  possible values of FORMAT are:
+  for entries in a BinaryData table.  Defaults to 'int8u' for BinaryData tables
+  if not specified.  The possible values of FORMAT are:
 
     int8s       - Signed 8-bit integer                    (EXIF 'SBYTE')
     int8u       - Unsigned 8-bit integer                  (EXIF 'BYTE')
@@ -131,13 +131,13 @@ is an explanation of the meaning of each special key:
   for XML tag database output.
 
   NOTES : Notes to introduce the table in the TagNames documentation.  Pod
-  formatting codes B<> and C<> may be used in this text.
+  formatting codes B<>, C<> and L<> may be used in this text.
 
-  IS_OFFSET : Reference to list of sorted TagID's representing offsets for
-  writable binary data tables only.  Not used for EXIF tables.
+  IS_OFFSET : Writable BinaryData tables only.  Reference to list of sorted
+  TagID's representing offsets.
 
-  IS_SUBDIR : BinaryData tables only.  A reference to a list of sorted tag ID's
-  representing subdirectories.  Required for writable subdirectories only.
+  IS_SUBDIR : Writable BinaryData tables only.  A reference to a list of sorted
+  tag ID's representing subdirectories.
 
   EXTRACT_UNKNOWN : Used in PDF tables to specify a directory where all unknown
   tags should be extracted.  Set to 0 to extract only unknown numbered tags for
@@ -150,7 +150,7 @@ is an explanation of the meaning of each special key:
   To define the URI, the NAMESPACE value is a reference to a hash where the key
   is the namespace prefix and and the value is the URI (alternatively, a
   reference to a 2-element array containing the prefix and URI is also allowed
-  for backward compatibility).  The NAMESAPCE value may be undef for XMP tables
+  for backward compatibility).  The NAMESPACE value may be undef for XMP tables
   where tags have variable namespaces (in this case each tag must have a
   Namespace entry).
 
@@ -354,6 +354,8 @@ numerical.
                   'Hidden' - set to hide tag from the TagName documentation.
                   Also suppresses verbose output of a BinaryData tag.
 
+                  'IsComposite' - flag set for Composite tags
+
                   'IsOffset' - flag set if the tag represents an offset to some
                   data, and causes value will be adjusted to an absolute file
                   offset.  If set to 2, the offset base of the parent directory
@@ -498,7 +500,7 @@ numerical.
                   the source @val and @prt values unless the input $val is
                   returned.  RawConv may generate Warning or Error tags, while
                   ValueConv and PrintConv should not (see ValueConv note below).
-                   Note: RawConv should only be used if necessary (in general,
+                  Note: RawConv should only be used if necessary (in general,
                   only if the conversion may return undef to ignore the tag, or
                   if a Warning may be issued) because ValueConv is more
                   efficient since it is only executed if the tag value is
@@ -594,9 +596,10 @@ numerical.
                   conversion is not applied for deleted tags (ie. $val is
                   undef).
 
-  PrintConvInv  : The inverse of PrintConv.  Only necessary if for Writable tags
-                  when PrintConv is specified (unless WriteAlso is used).  See
-                  ValueConvInv above for more details.
+  PrintConvInv  : The inverse of PrintConv.  Necessary for Writable tags
+                  when PrintConv is specified (unless WriteAlso is used), but
+                  may be used without PrintConv.  See ValueConvInv above for
+                  more details.
 
   PrintConvColumns : Number of columns for PrintConv lookup in HTML docs. If not
                   set, the number of columns is determined automatically
@@ -700,17 +703,18 @@ numerical.
                   are the names of the tags to write, and the values are
                   evaluated to obtain the ValueConv values of each tag (or undef
                   to delete the tag).  In the eval, $val is the Raw value of the
-                  parent tag (which may be undef if the tag is being deleted),
-                  and the %opts hash may be accessed to modify SetNewValue
-                  options for each tag.  By default, Type is set to "ValueConv"
-                  and the Protected option has bit 0x02 set to allow writing of
-                  Protected tags that aren't directly writable.  The AddValue
-                  and DelValue options from the parent tag are also defined, but
-                  no other options are set by default.  Previous new values of
-                  WriteAlso tags have already been removed prior to the eval if
-                  the Replace option was used for the parent tag.  If an empty
-                  warning is issued ("\n"), the target tag is not written and no
-                  error is reported.
+                  parent tag (which may be undef if the tag is being deleted,
+                  and should not be modified because it will affect subsequent
+                  WriteAlso tags), and the %opts hash may be accessed to modify
+                  SetNewValue options for each tag.  By default, Type is set to
+                  "ValueConv" and the Protected option has bit 0x02 set to allow
+                  writing of Protected tags that aren't directly writable.  The
+                  AddValue and DelValue options from the parent tag are also
+                  defined, but no other options are set by default.  Previous
+                  new values of WriteAlso tags have already been removed prior
+                  to the eval if the Replace option was used for the parent tag.
+                   If an empty warning is issued ("\n"), the target tag is not
+                  written and no error is reported.
 
   WriteCheck    : If given, specifies a scalar which is evaluated as a Perl
                   expression for a one-time validatation the Raw value being
@@ -777,6 +781,9 @@ numerical.
 
   BitsTotal     : [Writable BITMASK tags only] Total number of bits in bit mask.
                   Defaults to BitsPerWord if not specified.
+
+  FixedSize     : [EXIF only] Hack to ignore value size and use this instead.
+                  Only valid if Format is also defined.
 
   Struct        : [XMP tags only] Reference to structure hash for structured XMP
                   tags.  See "STRUCTURES" section below for more details.  (For
