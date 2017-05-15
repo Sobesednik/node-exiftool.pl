@@ -1279,7 +1279,7 @@ $VERSION = '1.22';
       Description => '圧縮計画',
       PrintConv => {
         'JPEG' => 'JPEG圧縮率',
-        'JPEG (old-style)' => 'JPEG(古い形式)',
+        'JPEG (old-style)' => 'JPEG (古い形式)',
         'None' => '無し',
         'Uncompressed' => '非圧縮',
       },
@@ -5818,7 +5818,7 @@ and values.
 
 =head1 AUTHOR
 
-Copyright 2003-2016, Phil Harvey (phil at owl.phy.queensu.ca)
+Copyright 2003-2017, Phil Harvey (phil at owl.phy.queensu.ca)
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

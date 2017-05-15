@@ -24,7 +24,7 @@ use strict;
 use vars qw($VERSION);
 use Image::ExifTool qw(:Public);
 
-$VERSION = '1.50';
+$VERSION = '1.51';
 
 sub JITTER() { return 2 }       # maximum time jitter
 
@@ -406,7 +406,7 @@ DoneFix:    $isDate = 1;
             #  $GPGGA,092204.999,4250.5589,S,14718.5084,E,1,04,24.4,19.7,M,,,,0000*1F
             #  $GPGGA,093657.000,3652.835020,N,01053.104094,E,,8,,166.924,M,40.9,M,,*77
             #  $GPGGA,hhmmss.sss,ddmm.mmmm,N/S,dddmm.mmmm,E/W,0=invalid,sats,hdop,alt,M,...
-            /^\$GPGGA,(\d{2})(\d{2})(\d+(\.\d*)?),(\d*?)(\d{1,2}\.\d+),([NS]),(\d*?)(\d{1,2}\.\d+),([EW]),[1-6]?,(\d+)?,(\.\d+|\d+\.?\d*)?,(-?\d+\.?\d*)?,M?,/ or next;
+            /^\$GPGGA,(\d{2})(\d{2})(\d+(\.\d*)?),(\d*?)(\d{1,2}\.\d+),([NS]),(\d*?)(\d{1,2}\.\d+),([EW]),[1-6]?,(\d+)?,(\.\d+|\d+\.?\d*)?,(-?\d+\.?\d*)?,M?/ or next;
             $fix{lat} = (($5 || 0) + $6/60) * ($7 eq 'N' ? 1 : -1);
             $fix{lon} = (($8 || 0) + $9/60) * ($10 eq 'E' ? 1 : -1);
             @fix{qw(nsats hdop alt)} = ($11,$12,$13);
@@ -1073,7 +1073,10 @@ Category:       foreach $category (qw{pos track alt orient}) {
 # Inputs: 0) exiftool object ref,
 #         1) time difference string ("[+-]DD MM:HH:SS.ss"), geosync'd file name,
 #            "GPSTIME@IMAGETIME", or "GPSTIME@FILENAME"
-# Returns: geosync hash
+# Returns: geosync hash:
+#           Offset = Offset in seconds for latest synchronization (GPS - image time)
+#           Points = hash of all sync offsets keyed by image times in seconds
+#           Times = sorted list of image synchronization times (keys in Points hash) 
 # Notes: calling this routine with more than one geosync'd file causes time drift
 #        correction to be implemented
 sub ConvertGeosync($$)
@@ -1102,7 +1105,11 @@ sub ConvertGeosync($$)
             my $info = ImageInfo($syncFile, { PrintConv => 0 }, @timeTags,
                                  'GPSDateTime', 'GPSTimeStamp');
             $$info{Error} and warn("$$info{Err}\n"), return undef;
-            $gpsTime or $gpsTime = $$info{GPSDateTime} || $$info{GPSTimeStamp};
+            unless ($gpsTime) {
+                $gpsTime = $$info{GPSDateTime} || $$info{GPSTimeStamp};
+                $gpsTime .= 'Z' if $gpsTime and not $$info{GPSDateTime};
+            }
+            $gpsTime or warn("No GPSTimeStamp in '$syncFile\n"), return undef;
             my $tag;
             foreach $tag (@timeTags) {
                 if ($$info{$tag}) {
@@ -1111,7 +1118,6 @@ sub ConvertGeosync($$)
                     last;
                 }
             }
-            $gpsTime or warn("No GPSTimeStamp in '$syncFile\n"), return undef;
             $imgTime or warn("No image timestamp in '$syncFile'\n"), return undef;
         }
         # add date to date-less timestamps
@@ -1256,7 +1262,7 @@ user-defined tags, GPSPitch and GPSRoll, must be active.
 
 =head1 AUTHOR
 
-Copyright 2003-2016, Phil Harvey (phil at owl.phy.queensu.ca)
+Copyright 2003-2017, Phil Harvey (phil at owl.phy.queensu.ca)
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

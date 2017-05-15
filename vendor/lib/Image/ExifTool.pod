@@ -5,7 +5,7 @@
 #
 # URL:          http://owl.phy.queensu.ca/~phil/exiftool/
 #
-# Legal:        Copyright (c) 2003-2016, Phil Harvey (phil at owl.phy.queensu.ca)
+# Legal:        Copyright (c) 2003-2017, Phil Harvey (phil at owl.phy.queensu.ca)
 #               This library is free software; you can redistribute it and/or
 #               modify it under the same terms as Perl itself.
 #------------------------------------------------------------------------------
@@ -65,42 +65,42 @@ supported by ExifTool (r = read, w = write, c = create):
 
   File Types
   ------------+-------------+-------------+-------------+------------
-  3FR   r     | DV    r     | K25   r     | OGG   r     | RTF   r
-  3G2   r/w   | DVB   r/w   | KDC   r     | OGV   r     | RW2   r/w
-  3GP   r/w   | DYLIB r     | KEY   r     | OPUS  r     | RWL   r/w
-  A     r     | EIP   r     | LA    r     | ORF   r/w   | RWZ   r
-  AA    r     | EPS   r/w   | LFP   r     | OTF   r     | RM    r
-  AAX   r/w   | EPUB  r     | LNK   r     | PAC   r     | SEQ   r
-  ACR   r     | ERF   r/w   | M2TS  r     | PAGES r     | SO    r
-  AFM   r     | EXE   r     | M4A/V r/w   | PBM   r/w   | SR2   r/w
-  AI    r/w   | EXIF  r/w/c | MEF   r/w   | PCD   r     | SRF   r
-  AIFF  r     | EXR   r     | MIE   r/w/c | PDB   r     | SRW   r/w
-  APE   r     | EXV   r/w/c | MIFF  r     | PDF   r/w   | SVG   r
-  ARW   r/w   | F4A/V r/w   | MKA   r     | PEF   r/w   | SWF   r
-  ASF   r     | FFF   r/w   | MKS   r     | PFA   r     | THM   r/w
-  AVI   r     | FLA   r     | MKV   r     | PFB   r     | TIFF  r/w
-  AZW   r     | FLAC  r     | MNG   r/w   | PFM   r     | TORRENT r
-  BMP   r     | FLIF  r/w   | MOBI  r     | PGF   r     | TTC   r
-  BPG   r     | FLV   r     | MODD  r     | PGM   r/w   | TTF   r
-  BTF   r     | FPF   r     | MOI   r     | PLIST r     | VCF   r
-  CHM   r     | FPX   r     | MOS   r/w   | PICT  r     | VRD   r/w/c
-  COS   r     | GIF   r/w   | MOV   r/w   | PMP   r     | VSD   r
-  CR2   r/w   | GZ    r     | MP3   r     | PNG   r/w   | WAV   r
-  CRW   r/w   | HDP   r/w   | MP4   r/w   | PPM   r/w   | WDP   r/w
-  CS1   r/w   | HDR   r     | MPC   r     | PPT   r     | WEBP  r
-  DCM   r     | HTML  r     | MPG   r     | PPTX  r     | WEBM  r
-  DCP   r/w   | ICC   r/w/c | MPO   r/w   | PS    r/w   | WMA   r
-  DCR   r     | ICS   r     | MQV   r/w   | PSB   r/w   | WMV   r
-  DFONT r     | IDML  r     | MRW   r/w   | PSD   r/w   | WV    r
-  DIVX  r     | IIQ   r/w   | MXF   r     | PSP   r     | X3F   r/w
-  DJVU  r     | IND   r/w   | NEF   r/w   | QTIF  r/w   | XCF   r
-  DLL   r     | INX   r     | NRW   r/w   | RA    r     | XLS   r
-  DNG   r/w   | ISO   r     | NUMBERS r   | RAF   r/w   | XLSX  r
-  DOC   r     | ITC   r     | O     r     | RAM   r     | XMP   r/w/c
-  DOCX  r     | J2C   r     | ODP   r     | RAR   r     | ZIP   r
-  DPX   r     | JNG   r/w   | ODS   r     | RAW   r/w   |
-  DR4   r/w/c | JP2   r/w   | ODT   r     | RIFF  r     |
-  DSS   r     | JPEG  r/w   | OFR   r     | RSRC  r     |
+  3FR   r     | DV    r     | JSON  r     | ODT   r     | RIFF  r
+  3G2   r/w   | DVB   r/w   | K25   r     | OFR   r     | RSRC  r
+  3GP   r/w   | DYLIB r     | KDC   r     | OGG   r     | RTF   r
+  A     r     | EIP   r     | KEY   r     | OGV   r     | RW2   r/w
+  AA    r     | EPS   r/w   | LA    r     | OPUS  r     | RWL   r/w
+  AAX   r/w   | EPUB  r     | LFP   r     | ORF   r/w   | RWZ   r
+  ACR   r     | ERF   r/w   | LNK   r     | OTF   r     | RM    r
+  AFM   r     | EXE   r     | M2TS  r     | PAC   r     | SEQ   r
+  AI    r/w   | EXIF  r/w/c | M4A/V r/w   | PAGES r     | SO    r
+  AIFF  r     | EXR   r     | MAX   r     | PBM   r/w   | SR2   r/w
+  APE   r     | EXV   r/w/c | MEF   r/w   | PCD   r     | SRF   r
+  ARW   r/w   | F4A/V r/w   | MIE   r/w/c | PDB   r     | SRW   r/w
+  ASF   r     | FFF   r/w   | MIFF  r     | PDF   r/w   | SVG   r
+  AVI   r     | FLA   r     | MKA   r     | PEF   r/w   | SWF   r
+  AZW   r     | FLAC  r     | MKS   r     | PFA   r     | THM   r/w
+  BMP   r     | FLIF  r/w   | MKV   r     | PFB   r     | TIFF  r/w
+  BPG   r     | FLV   r     | MNG   r/w   | PFM   r     | TORRENT r
+  BTF   r     | FPF   r     | MOBI  r     | PGF   r     | TTC   r
+  CHM   r     | FPX   r     | MODD  r     | PGM   r/w   | TTF   r
+  COS   r     | GIF   r/w   | MOI   r     | PLIST r     | VCF   r
+  CR2   r/w   | GZ    r     | MOS   r/w   | PICT  r     | VRD   r/w/c
+  CRW   r/w   | HDP   r/w   | MOV   r/w   | PMP   r     | VSD   r
+  CS1   r/w   | HDR   r     | MP3   r     | PNG   r/w   | WAV   r
+  DCM   r     | HTML  r     | MP4   r/w   | PPM   r/w   | WDP   r/w
+  DCP   r/w   | ICC   r/w/c | MPC   r     | PPT   r     | WEBP  r
+  DCR   r     | ICS   r     | MPG   r     | PPTX  r     | WEBM  r
+  DFONT r     | IDML  r     | MPO   r/w   | PS    r/w   | WMA   r
+  DIVX  r     | IIQ   r/w   | MQV   r/w   | PSB   r/w   | WMV   r
+  DJVU  r     | IND   r/w   | MRW   r/w   | PSD   r/w   | WV    r
+  DLL   r     | INX   r     | MXF   r     | PSP   r     | X3F   r/w
+  DNG   r/w   | ISO   r     | NEF   r/w   | QTIF  r/w   | XCF   r
+  DOC   r     | ITC   r     | NRW   r/w   | RA    r     | XLS   r
+  DOCX  r     | J2C   r     | NUMBERS r   | RAF   r/w   | XLSX  r
+  DPX   r     | JNG   r/w   | O     r     | RAM   r     | XMP   r/w/c
+  DR4   r/w/c | JP2   r/w   | ODP   r     | RAR   r     | ZIP   r
+  DSS   r     | JPEG  r/w   | ODS   r     | RAW   r/w   |
 
   Meta Information
   ----------------------+----------------------+---------------------
@@ -482,7 +482,8 @@ set to undef to pass through EXIF "ASCII" values without recoding.  Set to
 
 External character set used for file names passed to ExifTool functions. 
 When set in Windows, this triggers use of Windows wide-character i/o library
-routines (requires Win32API::File).  Default is undef.
+routines (requires Win32API::File).  Default is undef.  May also be set to
+an empty string to avoid "encoding not specified" warnings on Windows.
 
 =item CharsetID3
 
@@ -622,8 +623,8 @@ Default is undef.
 
 Perl expression used to filter values for all tags.  The expression acts on
 the value of the Perl default variable ($_), and changes the value of this
-variable as required.  The value is not changed if the expression returns
-undef.  Applies to all returned values unless PrintConv option is disabled.
+variable as required.  The value is not changed if $_ is set to undef. 
+Applies to all returned values unless PrintConv option is disabled.
 
 =item FixBase
 
@@ -756,8 +757,8 @@ are:
 
 =item MDItemTags
 
-Flag to extract the OS X metadata item tags (see the "mdls" man page for
-details).
+Flag to extract the OS X metadata item tags (see the "mdls" man page and
+L<Image::ExifTool::TagNames/MacOS MDItem Tags> for more information).
 
 =item MissingTagValue
 
@@ -812,17 +813,19 @@ and enforces a time zero of 1904 as per the QuickTime specification.
 
 Flag to request all tags to be extracted.  This causes some tags to be
 generated which normally would not be unless specifically requested (by
-passing the tag name to L</ImageInfo> or L</ExtractInfo>).  Note that this
-flag is set automatically during a call to L</SetNewValuesFromFile> to make
-all tags available for copying.  Default is undef.
+passing the tag name to L</ImageInfo> or L</ExtractInfo>).  May be set to 2
+or 3 to enable generation of some additional tags mentioned in the tag name
+documentation.  Default is undef.
 
 =item RequestTags
 
-List of additional tags to request in next call to L</ExtractInfo>.  This
-option is useful only for tags which aren't extracted unless specifically
-requested.  Value may be a list reference, a delimited string of tag names
-(any delimiter is allowed), or undef to clear the current RequestTags list. 
-Case is not significant.  Default is undef.
+List of additional tag and/or group names to request in the next call to
+L</ExtractInfo>.  This option is useful only for tags/groups which aren't
+extracted unless specifically requested.  Value may be a list reference, a
+delimited string of names (any delimiter is allowed), or undef to clear the
+current RequestTags list.  Groups are requested by adding a colon after the
+name (eg. "MacOS:").  Names are converted to lower case as they are added to
+the list.  Default is undef.
 
 =item ScanForXMP
 
@@ -856,13 +859,17 @@ Secondary sort order used for tags within each group when Sort is 'Group':
 Flag to return undefined value for any date which can't be converted when
 the DateFormat option is used.  Default is undef.
 
+  undef - Same as 0 for reading, 1 for copying
+    0   - Return date/time value unchanged if it can't be converted
+    1   - Return undef if date/time value can't be converted
+
 =item Struct
 
 Flag to return XMP structures as hash references instead of flattening into
 individual tags.  Has no effect when writing since both flattened and
 structured tags may always be written.  Possible values are:
 
-  undef - Same as 0 for reading, 2 for copying
+  undef - (default) Same as 0 for reading, 2 for copying
     0   - Read/copy flattened tags
     1   - Read/copy structured tags
     2   - Read/copy both flattened and structured tags, but flag
@@ -904,6 +911,11 @@ the parameter name with a dollar sign, just like normal tags.  If called
 without no additional arguments, C<Options('UserParam')> returns a reference
 to the hash of all user parameters (with lower-case names).
 
+=item Validate
+
+[Experimental] Flag to perform extra validation checks when reading, causing
+extra warnings to be generated if problems are found.  Default is undef.
+
 =item Verbose
 
 Print verbose messages to file specified by TextOut option.  Value may be
@@ -926,6 +938,11 @@ list below.  Default is 'wcg'.
 The level of the group differs for different types of metadata. For XMP or
 IPTC this is the full XMP/IPTC block (the family 0 group), but for EXIF this
 is the individual IFD (the family 1 group).
+
+=item XAttrTags
+
+Flag to extract the OS X extended attribute tags (see the "xattr" man page
+and L<Image::ExifTool::TagNames/MacOS XAttr Tags> for more information).
 
 =item XMPAutoConv
 
@@ -976,10 +993,12 @@ is given.  The following options are effective in the call to
 L</ExtractInfo>:
 
 Binary, Charset, CharsetEXIF, CharsetFileName, CharsetID3, CharsetIPTC,
-CharsetPhotoshop, CharsetQuickTime, Composite, ExtendedXMP, ExtractEmbedded,
-FastScan, FixBase, HtmlDump, HtmlDumpBase, IgnoreMinorErrors, Lang,
-LargeFileSupport, MakerNotes, NoPDFList, PNGEarlyXMP, ScanForXMP, Struct,
-TextOut, Unknown and Verbose.
+CharsetPhotoshop, CharsetQuickTime, CharsetRIFF, Composite, ExtendedXMP,
+ExtractEmbedded, FastScan, FixBase, HtmlDump, HtmlDumpBase,
+IgnoreMinorErrors, Lang, LargeFileSupport, MakerNotes, MDItemTags,
+NoPDFList, Password, PNGEarlyXMP, QuickTimeUTC (enforced 1904 time zero),
+RequestAll, RequestTags, ScanForXMP, Struct, TextOut, Unknown, Verbose,
+XAttrTags and XMPAutoConv.
 
 =item Return Value:
 
@@ -1023,6 +1042,13 @@ Reference to information hash, the same as with L</ImageInfo>.
 
 =back
 
+The following options are effective in the call to L</GetInfo>:
+
+Charset, CoordFormat, DateFormat, Duplicates, Escape, Exclude, Filter,
+Group#, GlobalTimeShift, Lang, List, ListItem, ListSep, PrintConv,
+QuickTimeUTC (conversion to local time), Sort (if a tag list reference is
+given) and StrictDate.
+
 =head2 WriteInfo
 
 Write meta information to a file.  The specified source file is rewritten to
@@ -1031,6 +1057,11 @@ calls to L</SetNewValue>.  The necessary segments and/or directories are
 created in the destination file as required to store the specified
 information.  May be called repeatedly to write the same information to
 additional files without the need to call L</SetNewValue> again.
+
+Note that it is NOT necessary to call L</ExtractInfo> or L</ImageInfo>
+before L</WriteInfo>.  L</WriteInfo> changes only metadata specified by
+previous calls to L</SetNewValue>.
+
 
     # add information to a source file, writing output to new file
     $exifTool->WriteInfo($srcfile, $dstfile);
@@ -1098,7 +1129,7 @@ called with a source file name.
 The following ExifTool options are effective in the call to L</WriteInfo>:
 
 ByteOrder, Charset, CharsetEXIF, CharsetFileName, CharsetIPTC, Compact,
-Compress, FixBase, IgnoreMinorErrors, PNGEarlyXMP and Verbose.
+Compress, FixBase, IgnoreMinorErrors, Password, PNGEarlyXMP and Verbose.
 
 =head2 GetTagList
 
@@ -1224,7 +1255,8 @@ optional group specifier), use L</GetInfo> instead.
 The following options are in effect when L</GetValue> is called:
 
 Charset, CoordFormat, DateFormat, Escape, Filter, GlobalTimeShift, Lang,
-List, ListItem, ListSep, PrintConv and StrictDate.
+List, ListItem, ListSep, PrintConv, QuickTimeUTC (conversion to local time),
+and StrictDate.
 
 =over 4
 
@@ -1398,10 +1430,11 @@ this tag only.  Default is 0.
 
 =item Group
 
-Specifies group name where tag should be written.  If not specified, tag is
-written to highest priority group as specified by L</SetNewGroups>.  May be
-one or more family 0, 1 or 2 groups with optional leading family number,
-separated by colons.  Case is not significant.
+Specifies group name where tag should be written.  This option is superseded
+by any group specified in the tag name.  If not specified, tag is written to
+highest priority group as specified by L</SetNewGroups>.  May be one or more
+family 0, 1 or 2 groups with optional leading family number, separated by
+colons.  Case is not significant.
 
 =item NoFlat
 
@@ -1478,7 +1511,7 @@ explicitly, either by group (with 'Adobe:*') or as a block (with 'Adobe').
 The following ExifTool options are effective in the call to L</SetNewValue>:
 
 Charset, DateFormat, Escape, IgnoreMinorErrors, Lang, ListSep, ListSplit,
-PrintConv, StrictDate, Verbose and WriteMode.
+PrintConv, QuickTimeUTC, StrictDate, Verbose and WriteMode.
 
 =head2 GetNewValue
 
@@ -2140,25 +2173,26 @@ Leaf, LeafSubIFD, Leica, Lytro, M2TS, MAC, MIE-Audio, MIE-Camera, MIE-Canon,
 MIE-Doc, MIE-Extender, MIE-Flash, MIE-GPS, MIE-Geo, MIE-Image, MIE-Lens,
 MIE-Main, MIE-MakerNotes, MIE-Meta, MIE-Orient, MIE-Preview, MIE-Thumbnail,
 MIE-UTM, MIE-Unknown, MIE-Video, MIFF, MNG, MOBI, MOI, MPC, MPEG, MPF0,
-MPImage, MXF, MakerNotes, MakerUnknown, Matroska, MediaJukebox, MetaIFD,
-Microsoft, Minolta, MinoltaRaw, Motorola, NITF, Nikon, NikonCapture,
-NikonCustom, NikonScan, Nintendo, Ocad, Ogg, Olympus, OpenEXR, Opus, PDF,
-PICT, PNG, PNG-pHYs, PSP, Palm, Panasonic, PanasonicRaw, Pentax, PhaseOne,
-PhotoCD, PhotoMechanic, Photoshop, PictureInfo, PostScript, PreviewIFD,
-PrintIM, ProfileIFD, Qualcomm, QuickTime, RAF, RAF2, RIFF, RMETA, RSRC, RTF,
-Radiance, Rawzor, Real, Real-CONT, Real-MDPR, Real-PROP, Real-RA3, Real-RA4,
-Real-RA5, Real-RJMD, Reconyx, Ricoh, SPIFF, SR2, SR2DataIFD, SR2SubIFD,
-SRF#, SVG, Samsung, Sanyo, Scalado, Sigma, SigmaRaw, Sony, SonyIDC, Stim,
-SubIFD, System, Theora, Torrent, Track#, VCalendar, VCard, Version0, Vorbis,
-XML, XMP, XMP-DICOM, XMP-GPano, XMP-MP, XMP-MP1, XMP-PixelLive, XMP-aas,
-XMP-acdsee, XMP-album, XMP-apple-fi, XMP-aux, XMP-cc, XMP-cell,
-XMP-creatorAtom, XMP-crs, XMP-dc, XMP-dex, XMP-digiKam, XMP-dwc, XMP-exif,
-XMP-exifEX, XMP-expressionmedia, XMP-extensis, XMP-fpv, XMP-getty, XMP-ics,
-XMP-iptcCore, XMP-iptcExt, XMP-lr, XMP-mediapro, XMP-microsoft,
-XMP-mwg-coll, XMP-mwg-kw, XMP-mwg-rs, XMP-pdf, XMP-pdfx, XMP-photomech,
-XMP-photoshop, XMP-plus, XMP-pmi, XMP-prism, XMP-prl, XMP-prm, XMP-pur,
-XMP-rdf, XMP-swf, XMP-tiff, XMP-x, XMP-xmp, XMP-xmpBJ, XMP-xmpDM, XMP-xmpMM,
-XMP-xmpNote, XMP-xmpPLUS, XMP-xmpRights, XMP-xmpTPg, ZIP
+MPImage, MXF, MacOS, MakerNotes, MakerUnknown, Matroska, MediaJukebox,
+MetaIFD, Microsoft, Minolta, MinoltaRaw, Motorola, NITF, Nikon,
+NikonCapture, NikonCustom, NikonScan, Nintendo, Ocad, Ogg, Olympus, OpenEXR,
+Opus, PDF, PICT, PNG, PNG-pHYs, PSP, Palm, Panasonic, PanasonicRaw, Pentax,
+PhaseOne, PhotoCD, PhotoMechanic, Photoshop, PictureInfo, PostScript,
+PreviewIFD, PrintIM, ProfileIFD, Qualcomm, QuickTime, RAF, RAF2, RIFF,
+RMETA, RSRC, RTF, Radiance, Rawzor, Real, Real-CONT, Real-MDPR, Real-PROP,
+Real-RA3, Real-RA4, Real-RA5, Real-RJMD, Reconyx, Ricoh, SPIFF, SR2,
+SR2DataIFD, SR2SubIFD, SRF#, SVG, Samsung, Sanyo, Scalado, Sigma, SigmaRaw,
+Sony, SonyIDC, Stim, SubIFD, System, Theora, Torrent, Track#, VCalendar,
+VCard, Version0, Vorbis, XML, XMP, XMP-DICOM, XMP-GPano, XMP-MP, XMP-MP1,
+XMP-PixelLive, XMP-aas, XMP-acdsee, XMP-album, XMP-apple-fi, XMP-aux,
+XMP-cc, XMP-cell, XMP-creatorAtom, XMP-crs, XMP-dc, XMP-dex, XMP-digiKam,
+XMP-dwc, XMP-exif, XMP-exifEX, XMP-expressionmedia, XMP-extensis, XMP-fpv,
+XMP-getty, XMP-ics, XMP-iptcCore, XMP-iptcExt, XMP-lr, XMP-mediapro,
+XMP-microsoft, XMP-mwg-coll, XMP-mwg-kw, XMP-mwg-rs, XMP-pdf, XMP-pdfx,
+XMP-photomech, XMP-photoshop, XMP-plus, XMP-pmi, XMP-prism, XMP-prl,
+XMP-prm, XMP-pur, XMP-rdf, XMP-swf, XMP-tiff, XMP-x, XMP-xmp, XMP-xmpBJ,
+XMP-xmpDM, XMP-xmpMM, XMP-xmpNote, XMP-xmpPLUS, XMP-xmpRights, XMP-xmpTPg,
+ZIP
 
 =item Family 2 (Category):
 
@@ -2341,10 +2375,13 @@ The encoding of file names is specified via the L</CharsetFileName> option.
 By default, L</CharsetFileName> is not defined, and file names passed to
 ExifTool are used directly in calls to the system i/o routines (which expect
 UTF-8 strings on Mac/Linux, but default to the system code page on Windows).
-Setting L</CharsetFileName> causes file names to be converted from the
-specified encoding to one appropriate for the system.  In Windows this also
-has the effect of activating Unicode filename support via the special
-Windows wide-character i/o routines if Win32API::File is available.
+In this mode on Windows a warning is issued if a file name contains special
+characters, but this warning may be avoided by setting L</CharsetFileName>
+to an empty string.  Setting L</CharsetFileName> to any other value causes
+file names to be converted from the specified encoding to one appropriate
+for the system.  In Windows this also has the effect of activating Unicode
+filename support via the special Windows wide-character i/o routines if
+Win32API::File is available.
 
 =item Internal Character Sets:
 
@@ -2529,7 +2566,7 @@ specified by the L</Charset> option.
 
 =head1 AUTHOR
 
-Copyright 2003-2016, Phil Harvey
+Copyright 2003-2017, Phil Harvey
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

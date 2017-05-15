@@ -85,7 +85,7 @@ sub ProcessSerialData($$$);
 sub ProcessFilters($$$);
 sub SwapWords($);
 
-$VERSION = '3.69';
+$VERSION = '3.74';
 
 # Note: Removed 'USM' from 'L' lenses since it is redundant - PH
 # (or is it?  Ref 32 shows 5 non-USM L-type lenses)
@@ -402,13 +402,14 @@ $VERSION = '3.69';
     252 => 'Canon EF 70-200mm f/2.8L IS II USM + 1.4x', #50 (1.4x Mk II)
     253 => 'Canon EF 70-200mm f/2.8L IS II USM + 2x', #PH (NC)
     254 => 'Canon EF 100mm f/2.8L Macro IS USM', #42
-    255 => 'Sigma 24-105mm f/4 DG OS HSM | A or Sigma Lens', #50
+    255 => 'Sigma 24-105mm f/4 DG OS HSM | A or Other Sigma Lens', #50
     255.1 => 'Sigma 180mm f/2.8 EX DG OS HSM APO Macro', #50
     # Note: LensType 488 (0x1e8) is reported as 232 (0xe8) in 7D CameraSettings
     488 => 'Canon EF-S 15-85mm f/3.5-5.6 IS USM', #PH
     489 => 'Canon EF 70-300mm f/4-5.6L IS USM', #Gerald Kapounek
     490 => 'Canon EF 8-15mm f/4L Fisheye USM', #Klaus Reinfeld (PH added "Fisheye")
-    491 => 'Canon EF 300mm f/2.8L IS II USM', #42
+    491 => 'Canon EF 300mm f/2.8L IS II USM or Tamron Lens', #42
+    491.1 => 'Tamron SP 70-200mm F/2.8 Di VC USD G2 (A025)', #IB
     492 => 'Canon EF 400mm f/2.8L IS II USM', #PH
     493 => 'Canon EF 500mm f/4L IS II USM or EF 24-105mm f4L IS USM', #PH
     493.1 => 'Canon EF 24-105mm f/4L IS USM', #PH (should recheck this)
@@ -445,7 +446,9 @@ $VERSION = '3.69';
     4154 => 'Canon EF-S 24mm f/2.8 STM', #IB
     4155 => 'Canon EF-M 28mm f/3.5 Macro IS STM', #42
     4156 => 'Canon EF 50mm f/1.8 STM', #42
-    4157 => 'Canon EF-M 18-150mm 1:3.5-6.3 IS STM',#42
+    4157 => 'Canon EF-M 18-150mm 1:3.5-6.3 IS STM', #42
+    4158 => 'Canon EF-S 18-55mm f/4-5.6 IS STM', #PH
+    36910 => 'Canon EF 70-300mm f/4-5.6 IS II USM', #42
     36912 => 'Canon EF-S 18-135mm f/3.5-5.6 IS USM', #42
     65535 => 'n/a',
 );
@@ -573,7 +576,7 @@ $VERSION = '3.69';
     0x2770000 => 'PowerShot SD940 IS / Digital IXUS 120 IS / IXY Digital 220 IS',
     0x2800000 => 'PowerShot A495',
     0x2810000 => 'PowerShot A490',
-    0x2820000 => 'PowerShot A3100 IS / A3150 IS', # (different cameras, same ID)
+    0x2820000 => 'PowerShot A3100/A3150 IS', # (different cameras, same ID)
     0x2830000 => 'PowerShot A3000 IS',
     0x2840000 => 'PowerShot SD1400 IS / IXUS 130 / IXY 400F',
     0x2850000 => 'PowerShot SD1300 IS / IXUS 105 / IXY 200F',
@@ -621,7 +624,7 @@ $VERSION = '3.69';
     0x3270000 => 'PowerShot A2400 IS',
     0x3280000 => 'PowerShot A2300',
     0x3330000 => 'PowerShot G15', #25
-    0x3340000 => 'PowerShot SX50', #25
+    0x3340000 => 'PowerShot SX50 HS', #25/forum8196
     0x3350000 => 'PowerShot SX160 IS',
     0x3360000 => 'PowerShot S110 (new)',
     0x3370000 => 'PowerShot SX500 IS',
@@ -631,6 +634,7 @@ $VERSION = '3.69';
     0x3410000 => 'PowerShot SX270 HS',
     0x3420000 => 'PowerShot A3500 IS',
     0x3430000 => 'PowerShot A2600',
+    0x3440000 => 'PowerShot SX275 HS', #forum8199
     0x3450000 => 'PowerShot A1400',
     0x3460000 => 'PowerShot ELPH 130 IS / IXUS 140 / IXY 110F',
     0x3470000 => 'PowerShot ELPH 115/120 IS / IXUS 132/135 / IXY 90F/100F',
@@ -679,6 +683,8 @@ $VERSION = '3.69';
     0x4040001 => 'IXY 180', # ?? (from Canon sample)
     0x4050000 => 'PowerShot SX720 HS',
     0x4060000 => 'PowerShot SX620 HS',
+    0x4070000 => 'EOS M6',
+    0x4100000 => 'PowerShot G9 X Mark II',
     0x6040000 => 'PowerShot S100 / Digital IXUS / IXY Digital',
 
 # (see http://cweb.canon.jp/e-support/faq/answer/digitalcamera/10447-1.html for PowerShot/IXUS/IXY names)
@@ -770,6 +776,8 @@ $VERSION = '3.69';
     0x80000393 => 'EOS Rebel T6i / 750D / Kiss X8i',
     0x80000401 => 'EOS 5DS R',
     0x80000404 => 'EOS Rebel T6 / 1300D / Kiss X80',
+    0x80000405 => 'EOS Rebel T7i / 800D / Kiss X9i',
+    0x80000408 => 'EOS 77D / 9000D',
 );
 
 my %canonQuality = (
@@ -1700,7 +1708,7 @@ my %offOn = ( 0 => 'Off', 1 => 'On' );
             SubDirectory => { TagTable => 'Image::ExifTool::Canon::ColorData7' },
         },
         {   # (int16u[1560|1592]) - 5DS/5DSR (1560), 80D (1592), 1300D (1353) ref IB
-            Condition => '$count == 1560 or $count == 1592 or $count == 1353',
+            Condition => '$count == 1560 or $count == 1592 or $count == 1353 or $count == 1602',
             Name => 'ColorData8',
             SubDirectory => { TagTable => 'Image::ExifTool::Canon::ColorData8' },
         },
@@ -6684,6 +6692,7 @@ my %ciMaxFocal = (
         Name => 'PreviewImageLength',
         OffsetPair => 5,   # point to associated offset
         DataTag => 'PreviewImage',
+        WriteGroup => 'MakerNotes',
         Protected => 2,
     },
     3 => 'PreviewImageWidth',
@@ -6693,6 +6702,7 @@ my %ciMaxFocal = (
         Flags => 'IsOffset',
         OffsetPair => 2,  # associated byte count tagID
         DataTag => 'PreviewImage',
+        WriteGroup => 'MakerNotes',
         Protected => 2,
     },
     # NOTE: The size of the PreviewImageInfo structure is incorrectly
@@ -7427,6 +7437,7 @@ my %ciMaxFocal = (
             12 => '12 (5DS/5DSR)',
             13 => '13 (80D)', #PH
             14 => '14 (1300D)', #IB
+            15 => '15 (77D/800D)', #IB
         },
     },
     0x3f => { Name => 'WB_RGGBLevelsAsShot',     Format => 'int16s[4]' },
@@ -7545,28 +7556,28 @@ my %ciMaxFocal = (
     },
     0x30a => {
         Name => 'PerChannelBlackLevel',
-        Condition => '$$self{ColorDataVersion} < 14',
+        Condition => '$$self{ColorDataVersion} < 14 or $$self{ColorDataVersion} == 15',
         Format => 'int16u[4]',
-        Notes => '5DS, 5DS R and 80D',
+        Notes => '5DS, 5DS R, 77D, 80D and 800D',
     },
     0x30e => {
         Name => 'NormalWhiteLevel',
-        Condition => '$$self{ColorDataVersion} < 14',
+        Condition => '$$self{ColorDataVersion} < 14 or $$self{ColorDataVersion} == 15',
         Format => 'int16u',
-        Notes => '5DS, 5DS R and 80D',
+        Notes => '5DS, 5DS R, 77D, 80D and 800D',
         RawConv => '$val || undef',
     },
     0x30f => {
         Name => 'SpecularWhiteLevel',
-        Condition => '$$self{ColorDataVersion} < 14',
+        Condition => '$$self{ColorDataVersion} < 14 or $$self{ColorDataVersion} == 15',
         Format => 'int16u',
-        Notes => '5DS, 5DS R and 80D',
+        Notes => '5DS, 5DS R, 77D, 80D and 800D',
     },
     0x310 => {
         Name => 'LinearityUpperMargin',
-        Condition => '$$self{ColorDataVersion} < 14',
+        Condition => '$$self{ColorDataVersion} < 14 or $$self{ColorDataVersion} == 15',
         Format => 'int16u',
-        Notes => '5DS, 5DS R and 80D',
+        Notes => '5DS, 5DS R, 77D, 80D and 800D',
     },
 );
 
@@ -8886,7 +8897,7 @@ Canon maker notes in EXIF information.
 
 =head1 AUTHOR
 
-Copyright 2003-2016, Phil Harvey (phil at owl.phy.queensu.ca)
+Copyright 2003-2017, Phil Harvey (phil at owl.phy.queensu.ca)
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

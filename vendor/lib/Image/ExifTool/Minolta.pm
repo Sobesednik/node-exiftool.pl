@@ -49,7 +49,7 @@ use vars qw($VERSION %minoltaLensTypes %minoltaTeleconverters %minoltaColorMode
 use Image::ExifTool qw(:DataAccess :Utils);
 use Image::ExifTool::Exif;
 
-$VERSION = '2.42';
+$VERSION = '2.48';
 
 # Full list of product codes for Sony-compatible Minolta lenses
 # (ref http://www.kb.sony.com/selfservice/documentLink.do?externalId=C1000570)
@@ -345,6 +345,7 @@ $VERSION = '2.42';
    '128.19' => 'Sigma 35mm F1.4 DG HSM', #JR
    '128.20' => 'Sigma 18-35mm F1.8 DC HSM', #JR
    '128.21' => 'Sigma 50-500mm F4.5-6.3 APO DG OS HSM', #JR
+   '128.22' => 'Sigma 24-105mm F4 DG HSM | Art 013', #JR
     129 => 'Tamron Lens (129)',
     129.1 => 'Tamron 200-400mm F5.6 LD', #12 (LD ref 23)
     129.2 => 'Tamron 70-300mm F4-5.6 LD', #12
@@ -357,13 +358,15 @@ $VERSION = '2.42';
     142 => 'Voigtlander 70-300mm F4.5-5.6', #JD
     146 => 'Voigtlander Macro APO-Lanthar 125mm F2.5 SL', #JD
     194 => 'Tamron SP AF 17-50mm F2.8 XR Di II LD Aspherical [IF]', #23 (Model A16)
+    202 => 'Tamron SP AF 70-200mm F2.8 Di LD [IF] Macro', #JR (Model A001) (see also 255.7)
     203 => 'Tamron SP 70-200mm F2.8 Di USD', #JR (Model A009)
     204 => 'Tamron SP 24-70mm F2.8 Di USD', #JR (Model A007)
     212 => 'Tamron 28-300mm F3.5-6.3 Di PZD', #JR (Model A010)
     213 => 'Tamron 16-300mm F3.5-6.3 Di II PZD Macro', #JR (Model B016)
     214 => 'Tamron SP 150-600mm F5-6.3 Di USD', #JR (Model A011)
     215 => 'Tamron SP 15-30mm F2.8 Di USD', #JR (Model A012)
-    224 => 'Tamron SP 90mm F2.8 Di Macro 1:1 USD', #JR (Model F004)
+    218 => 'Tamron SP 90mm F2.8 Di Macro 1:1 USD (F017)', #JR (Model F017)
+    224 => 'Tamron SP 90mm F2.8 Di Macro 1:1 USD (F004)', #JR (Model F004)
     255 => 'Tamron Lens (255)',
     255.1 => 'Tamron SP AF 17-50mm F2.8 XR Di II LD Aspherical', # (Model A16)
     255.2 => 'Tamron AF 18-250mm F3.5-6.3 XR Di II LD', #JD (Model A18?)
@@ -538,62 +541,66 @@ $VERSION = '2.42';
    '65535.10' => 'Sony E PZ 16-50mm F3.5-5.6 OSS',  #PH (32793 - SELP1650)
    '65535.11' => 'Sony FE 35mm F2.8 ZA',            #JR (32794 - SEL35F28Z)
    '65535.12' => 'Sony FE 24-70mm F4 ZA OSS',       #JR (32795 - SEL2470Z)
-   '65535.13' => 'Sony E 18-200mm F3.5-6.3 OSS LE', #JR (32797 or 0 - SEL18200LE)
-   '65535.14' => 'Sony E 20mm F2.8',                #PH (32798 - SEL20F28)
-   '65535.15' => 'Sony E 35mm F1.8 OSS',            #JR (32799 - SEL35F18)
-   '65535.16' => 'Sony E PZ 18-105mm F4 G OSS',     #JR (32800 - SELP18105G)
-   '65535.17' => 'Sony FE 90mm F2.8 Macro G OSS',   #JR (32802 - SEL90M28G)
-   '65535.18' => 'Sony E 18-50mm F4-5.6',           #JR (32803 - SEL1850)
-   '65535.19' => 'Sony E PZ 18-200mm F3.5-6.3 OSS', #JR (32807 - SELP18200)
-   '65535.20' => 'Sony FE 55mm F1.8 ZA',            #JR (32808 - SEL55F18Z)
-   '65535.21' => 'Sony FE 70-200mm F4 G OSS',       #JR (32810 - SEL70200G)
-   '65535.22' => 'Sony FE 16-35mm F4 ZA OSS',       #JR (32811 - SEL1635Z)
-   '65535.23' => 'Sony FE 50mm F2.8 Macro',         #JR (32812 - SEL50M28)
-   '65535.24' => 'Sony FE 28-70mm F3.5-5.6 OSS',    #JR (32813 - SEL2870)
-   '65535.25' => 'Sony FE 35mm F1.4 ZA',            #JR (32814 - SEL35F14Z)
-   '65535.26' => 'Sony FE 24-240mm F3.5-6.3 OSS',   #JR (32815 - SEL24240)
-   '65535.27' => 'Sony FE 28mm F2',                 #JR (32816 - SEL28F20)
-   '65535.28' => 'Sony FE PZ 28-135mm F4 G OSS',    #JR (32817 - SELP28135G)
-   '65535.29' => 'Sony FE 24-70mm F2.8 GM',         #JR (32821 - SEL2470GM)
-   '65535.30' => 'Sony FE 50mm F1.4 ZA',            #JR (32822 - SEL50F14Z)
-   '65535.31' => 'Sony FE 85mm F1.4 GM',            #JR (32823 - SEL85F14GM)
-   '65535.32' => 'Sony FE 50mm F1.8',               #JR (32824 - SEL50F18F with trailing "F" as compared to 32790)
-   '65535.33' => 'Sony FE 21mm F2.8 (SEL28F20 + SEL075UWC)', #JR (32826 - SEL28F20 + SEL075UWC Ultra-wide converter)
-   '65535.34' => 'Sony FE 16mm F3.5 Fisheye (SEL28F20 + SEL057FEC)', #JR (32827 - SEL28F20 + SEL057FEC Fisheye converter)
-   '65535.35' => 'Sony FE 70-300mm F4.5-5.6 G OSS', #JR (32828 - SEL70300G)
-   '65535.36' => 'Sony FE 70-200mm F2.8 GM OSS',    #JR (32830 - SEL70200GM)
-   '65535.37' => 'Sony FE 70-200mm F2.8 GM OSS + 1.4X Teleconverter', #JR (33072 - SEL70200GM + SEL14TC)
-   '65535.38' => 'Sony FE 70-200mm F2.8 GM OSS + 2X Teleconverter', #JR (33073 - SEL70200GM + SEL20TC)
+   '65535.13' => 'Sony FE 85mm F1.8',               #JR (32796 - SEL85F18)
+   '65535.14' => 'Sony E 18-200mm F3.5-6.3 OSS LE', #JR (32797 or 0 - SEL18200LE)
+   '65535.15' => 'Sony E 20mm F2.8',                #PH (32798 - SEL20F28)
+   '65535.16' => 'Sony E 35mm F1.8 OSS',            #JR (32799 - SEL35F18)
+   '65535.17' => 'Sony E PZ 18-105mm F4 G OSS',     #JR (32800 - SELP18105G)
+   '65535.18' => 'Sony FE 90mm F2.8 Macro G OSS',   #JR (32802 - SEL90M28G)
+   '65535.19' => 'Sony E 18-50mm F4-5.6',           #JR (32803 - SEL1850)
+   '65535.20' => 'Sony E PZ 18-200mm F3.5-6.3 OSS', #JR (32807 - SELP18200)
+   '65535.21' => 'Sony FE 55mm F1.8 ZA',            #JR (32808 - SEL55F18Z)
+   '65535.22' => 'Sony FE 70-200mm F4 G OSS',       #JR (32810 - SEL70200G)
+   '65535.23' => 'Sony FE 16-35mm F4 ZA OSS',       #JR (32811 - SEL1635Z)
+   '65535.24' => 'Sony FE 50mm F2.8 Macro',         #JR (32812 - SEL50M28)
+   '65535.25' => 'Sony FE 28-70mm F3.5-5.6 OSS',    #JR (32813 - SEL2870)
+   '65535.26' => 'Sony FE 35mm F1.4 ZA',            #JR (32814 - SEL35F14Z)
+   '65535.27' => 'Sony FE 24-240mm F3.5-6.3 OSS',   #JR (32815 - SEL24240)
+   '65535.28' => 'Sony FE 28mm F2',                 #JR (32816 - SEL28F20)
+   '65535.29' => 'Sony FE PZ 28-135mm F4 G OSS',    #JR (32817 - SELP28135G)
+   '65535.30' => 'Sony FE 100mm F2.8 STF GM OSS',   #JR (32819 - SEL100F28GM) also seen one image with LensType2=33076...
+   '65535.31' => 'Sony FE 24-70mm F2.8 GM',         #JR (32821 - SEL2470GM)
+   '65535.32' => 'Sony FE 50mm F1.4 ZA',            #JR (32822 - SEL50F14Z)
+   '65535.33' => 'Sony FE 85mm F1.4 GM',            #JR (32823 - SEL85F14GM)
+   '65535.34' => 'Sony FE 50mm F1.8',               #JR (32824 - SEL50F18F with trailing "F" as compared to 32790)
+   '65535.35' => 'Sony FE 21mm F2.8 (SEL28F20 + SEL075UWC)', #JR (32826 - SEL28F20 + SEL075UWC Ultra-wide converter)
+   '65535.36' => 'Sony FE 16mm F3.5 Fisheye (SEL28F20 + SEL057FEC)', #JR (32827 - SEL28F20 + SEL057FEC Fisheye converter)
+   '65535.37' => 'Sony FE 70-300mm F4.5-5.6 G OSS', #JR (32828 - SEL70300G)
+   '65535.38' => 'Sony FE 70-200mm F2.8 GM OSS',    #JR (32830 - SEL70200GM)
+   '65535.39' => 'Sony FE 70-200mm F2.8 GM OSS + 1.4X Teleconverter', #JR (33072 - SEL70200GM + SEL14TC)
+   '65535.40' => 'Sony FE 70-200mm F2.8 GM OSS + 2X Teleconverter', #JR (33073 - SEL70200GM + SEL20TC)
 #
 # 3rd party E lenses
 #
-   '65535.39' => 'Samyang AF 50mm F1.4 FE',         #JR (32789)
-   '65535.40' => 'Samyang AF 14mm F2.8 FE',         #JR (32790)
-   '65535.41' => 'Sigma 19mm F2.8 [EX] DN',         #JR (0)
-   '65535.42' => 'Sigma 30mm F2.8 [EX] DN',         #JR (0)
-   '65535.43' => 'Sigma 60mm F2.8 DN',              #JR (0)
-   '65535.44' => 'Sigma 30mm F1.4 DC DN | C 016',   #IB (50480)
-   '65535.45' => 'Tamron 18-200mm F3.5-6.3 Di III VC', #JR (0 - Model B011)
-   '65535.46' => 'Zeiss Touit 12mm F2.8',           #JR (49201 or 0)
-   '65535.47' => 'Zeiss Touit 32mm F1.8',           #JR (49202 or 0)
-   '65535.48' => 'Zeiss Touit 50mm F2.8 Macro',     #JR (49203 or 0)
-   '65535.49' => 'Zeiss Batis 25mm F2',             #JR (49216)
-   '65535.50' => 'Zeiss Batis 85mm F1.8',           #JR (49217)
-   '65535.51' => 'Zeiss Batis 18mm F2.8',           #IB (49218)
-   '65535.52' => 'Zeiss Loxia 50mm F2',             #JR (49232 or 0)
-   '65535.53' => 'Zeiss Loxia 35mm F2',             #JR (49233 or 0)
-   '65535.54' => 'Zeiss Loxia 21mm F2.8',           #JR (49234)
-   '65535.55' => 'Zeiss Loxia 85mm F2.4',           #JR (49235)
+   '65535.41' => 'Samyang AF 50mm F1.4 FE',         #JR (32789)
+   '65535.42' => 'Samyang AF 14mm F2.8 FE',         #JR (32790 and 51505)
+   '65535.43' => 'Sigma 19mm F2.8 [EX] DN',         #JR (0)
+   '65535.44' => 'Sigma 30mm F2.8 [EX] DN',         #JR (0)
+   '65535.45' => 'Sigma 60mm F2.8 DN',              #JR (0)
+   '65535.46' => 'Sigma 30mm F1.4 DC DN | C 016',   #IB (50480)
+   '65535.47' => 'Tamron 18-200mm F3.5-6.3 Di III VC', #JR (0 - Model B011)
+   '65535.48' => 'Tokina Firin 20mm F2 FE MF',      #JR (0)
+   '65535.49' => 'Zeiss Touit 12mm F2.8',           #JR (49201 or 0)
+   '65535.50' => 'Zeiss Touit 32mm F1.8',           #JR (49202 or 0)
+   '65535.51' => 'Zeiss Touit 50mm F2.8 Macro',     #JR (49203 or 0)
+   '65535.52' => 'Zeiss Batis 25mm F2',             #JR (49216)
+   '65535.53' => 'Zeiss Batis 85mm F1.8',           #JR (49217)
+   '65535.54' => 'Zeiss Batis 18mm F2.8',           #IB (49218)
+   '65535.55' => 'Zeiss Batis 135mm F2.8',          #IB (49219)
+   '65535.56' => 'Zeiss Loxia 50mm F2',             #JR (49232 or 0)
+   '65535.57' => 'Zeiss Loxia 35mm F2',             #JR (49233 or 0)
+   '65535.58' => 'Zeiss Loxia 21mm F2.8',           #JR (49234)
+   '65535.59' => 'Zeiss Loxia 85mm F2.4',           #JR (49235)
 #
 # other lenses
 #
-   '65535.56' => 'Arax MC 35mm F2.8 Tilt+Shift', #JD
-   '65535.57' => 'Arax MC 80mm F2.8 Tilt+Shift', #JD
-   '65535.58' => 'Zenitar MF 16mm F2.8 Fisheye M42', #JD
-   '65535.59' => 'Samyang 500mm Mirror F8.0', #19
-   '65535.60' => 'Pentacon Auto 135mm F2.8', #19
-   '65535.61' => 'Pentacon Auto 29mm F2.8', #19
-   '65535.62' => 'Helios 44-2 58mm F2.0', #19
+   '65535.60' => 'Arax MC 35mm F2.8 Tilt+Shift', #JD
+   '65535.61' => 'Arax MC 80mm F2.8 Tilt+Shift', #JD
+   '65535.62' => 'Zenitar MF 16mm F2.8 Fisheye M42', #JD
+   '65535.63' => 'Samyang 500mm Mirror F8.0', #19
+   '65535.64' => 'Pentacon Auto 135mm F2.8', #19
+   '65535.65' => 'Pentacon Auto 29mm F2.8', #19
+   '65535.66' => 'Helios 44-2 58mm F2.0', #19
 );
 
 %minoltaTeleconverters = (
@@ -811,6 +818,7 @@ my %offOn = ( 0 => 'Off', 1 => 'On' );
         OffsetPair => 0x0089, # point to associated byte count
         DataTag => 'PreviewImage',
         Writable => 'int32u',
+        WriteGroup => 'MakerNotes',
         Protected => 2,
         # Note: Sony also uses this tag in A100 ARW images, but it points
         #       to the same data as JpgFromRaw
@@ -820,6 +828,7 @@ my %offOn = ( 0 => 'Off', 1 => 'On' );
         OffsetPair => 0x0088, # point to associated offset
         DataTag => 'PreviewImage',
         Writable => 'int32u',
+        WriteGroup => 'MakerNotes',
         Protected => 2,
     },
     0x0100 => { #10
@@ -2962,7 +2971,7 @@ and write Minolta RAW (MRW) images.
 
 =head1 AUTHOR
 
-Copyright 2003-2016, Phil Harvey (phil at owl.phy.queensu.ca)
+Copyright 2003-2017, Phil Harvey (phil at owl.phy.queensu.ca)
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

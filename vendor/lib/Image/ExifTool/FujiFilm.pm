@@ -15,6 +15,8 @@
 #                  and http://forum.photome.de/viewtopic.php?f=2&t=353&p=742#p740
 #               7) Kai Lappalainen private communication
 #               8) http://u88.n24.queensu.ca/exiftool/forum/index.php/topic,5223.0.html
+#               9) Zilvinas Brobliauskas private communication
+#               10) Albert Shan private communication
 #               IB) Iliah Borg private communication (LibRaw)
 #               JD) Jens Duttke private communication
 #------------------------------------------------------------------------------
@@ -26,7 +28,7 @@ use vars qw($VERSION);
 use Image::ExifTool qw(:DataAccess :Utils);
 use Image::ExifTool::Exif;
 
-$VERSION = '1.54';
+$VERSION = '1.57';
 
 sub ProcessFujiDir($$$);
 sub ProcessFaceRec($$$);
@@ -100,6 +102,7 @@ my %faceCategories = (
         Flags => 'PrintHex',
         Writable => 'int16u',
         PrintConv => {
+            0x00 => 'Very Soft', #10 (-4)
             0x01 => 'Soft',
             0x02 => 'Soft2',
             0x03 => 'Normal',
@@ -213,11 +216,14 @@ my %faceCategories = (
             0x180 => 'Medium Strong', #8 ("NR+1")
             0x200 => 'Weak', # ("NR-2, ref 8)
             0x280 => 'Medium Weak', #8 ("NR-1")
+            0x2c0 => 'Very Weak', #10 (-3)
+            0x2e0 => 'Weakest', #10 (-4)
         },
     },
     0x1010 => {
         Name => 'FujiFlashMode',
         Writable => 'int16u',
+        PrintHex => 1,
         PrintConv => {
             0 => 'Auto',
             1 => 'On',
@@ -225,6 +231,13 @@ my %faceCategories = (
             3 => 'Red-eye reduction',
             4 => 'External', #JD
             16 => 'Commander',
+            0x8000 => 'Not Attached', #10 (X-T2) (or external flash off)
+            0x8120 => 'TTL', #10 (X-T2)
+            0x9840 => 'Manual', #10 (X-T2)
+            0x9880 => 'Multi-flash', #10 (X-T2)
+            0xa920 => '1st Curtain (front)', #10 (EF-X500 flash)
+            0xc920 => '2nd Curtain (rear)', #10
+            0xe920 => 'High Speed Sync (HSS)', #10
         },
     },
     0x1011 => {
@@ -338,9 +351,9 @@ my %faceCategories = (
         Writable => 'int32s',
         PrintConv => {
             -32 => 'Hard',
-            -16 => 'Medium-hard',
+            -16 => 'Medium Hard',
             0 => 'Normal',
-            16 => 'Medium-soft',
+            16 => 'Medium Soft',
             32 => 'Soft',
         },
     },
@@ -349,9 +362,9 @@ my %faceCategories = (
         Writable => 'int32s',
         PrintConv => {
             -32 => 'Hard',
-            -16 => 'Medium-hard',
+            -16 => 'Medium Hard',
             0 => 'Normal',
-            16 => 'Medium-soft',
+            16 => 'Medium Soft',
             32 => 'Soft',
         },
     },
@@ -799,6 +812,7 @@ my %faceCategories = (
     FIRST_ENTRY => 0,
     # (FujiFilm image dimensions are REALLY confusing)
     # --> this needs some cleaning up
+    # [Note to self: See email from Iliah Borg for more information about WB settings in this data]
     0 => {
         Name => 'RawImageWidth',
         Format => 'int32u',
@@ -881,11 +895,12 @@ my %faceCategories = (
     },
     # 0xf009 - values: 0, 3
     0xf00a => 'BlackLevel', #IB
-    # 0xf00b ?
+    0xf00b => 'GeometricDistortionParams', #9 (rational64s[23, 35 or 43])
     0xf00c => 'WB_GRBLevelsStandard', #IB (GRBXGRBX; X=17 is standard illuminant A, X=21 is D65)
     0xf00d => 'WB_GRBLevelsAuto', #IB
     0xf00e => 'WB_GRBLevels',
-    # 0xf00f ?
+    0xf00f => 'ChromaticAberrationParams', # (rational64s[23])
+    0xf010 => 'VignettingParams', #9 (rational64s[31 or 64])
 );
 
 # information found in FFMV atom of MOV videos
@@ -1225,7 +1240,7 @@ FujiFilm maker notes in EXIF information, and to read/write FujiFilm RAW
 
 =head1 AUTHOR
 
-Copyright 2003-2016, Phil Harvey (phil at owl.phy.queensu.ca)
+Copyright 2003-2017, Phil Harvey (phil at owl.phy.queensu.ca)
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

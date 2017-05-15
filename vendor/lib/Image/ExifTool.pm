@@ -8,7 +8,7 @@
 # Revisions:    Nov. 12/2003 - P. Harvey Created
 #               (See html/history.html for revision history)
 #
-# Legal:        Copyright (c) 2003-2016, Phil Harvey (phil at owl.phy.queensu.ca)
+# Legal:        Copyright (c) 2003-2017, Phil Harvey (phil at owl.phy.queensu.ca)
 #               This library is free software; you can redistribute it and/or
 #               modify it under the same terms as Perl itself.
 #------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ use vars qw($VERSION $RELEASE @ISA @EXPORT_OK %EXPORT_TAGS $AUTOLOAD @fileTypes
             %mimeType $swapBytes $swapWords $currentByteOrder %unpackStd
             %jpegMarker %specialTags);
 
-$VERSION = '10.33';
+$VERSION = '10.51';
 $RELEASE = '';
 @ISA = qw(Exporter);
 %EXPORT_TAGS = (
@@ -66,7 +66,7 @@ sub RestoreNewValues($);
 sub WriteInfo($$;$$);
 sub SetFileModifyDate($$;$$$);
 sub SetFileName($$;$$);
-sub SetFilePermissions($$);
+sub SetSystemTags($$);
 sub GetAllTags(;$);
 sub GetWritableTags(;$);
 sub GetAllGroups($);
@@ -118,7 +118,7 @@ sub Exists($$);
 sub IsDirectory($$);
 sub Rename($$$);
 sub Unlink($@);
-sub SetFileTime($$;$$$);
+sub SetFileTime($$;$$$$);
 sub DoEscape($$);
 sub ConvertFileSize($);
 sub ParseArguments($;@); #(defined in attempt to avoid mod_perl problem)
@@ -129,17 +129,17 @@ sub ReadValue($$$$$;$);
 # unless tweaked in BuildTagLookup::GetTableOrder().
 @loadAllTables = qw(
     PhotoMechanic Exif GeoTiff CanonRaw KyoceraRaw Lytro MinoltaRaw PanasonicRaw
-    SigmaRaw JPEG GIMP Jpeg2000 GIF BMP BMP::OS2 BPG BPG::Extensions PICT PNG
-    MNG FLIF DjVu DPX OpenEXR MIFF PGF PSP PhotoCD Radiance PDF PostScript
-    Photoshop::Header Photoshop::Layers Photoshop::ImageData FujiFilm::RAF
-    FujiFilm::IFD Samsung::Trailer Sony::SRF2 Sony::SR2SubIFD Sony::PMP ITC ID3
-    FLAC Ogg Vorbis APE APE::NewHeader APE::OldHeader Audible MPC MPEG::Audio
-    MPEG::Video MPEG::Xing M2TS QuickTime QuickTime::ImageFile Matroska MOI MXF
-    DV Flash Flash::FLV Real::Media Real::Audio Real::Metafile RIFF AIFF ASF
-    DICOM MIE HTML XMP::SVG Palm Palm::MOBI Palm::EXTH Torrent EXE
-    EXE::PEVersion EXE::PEString EXE::MachO EXE::PEF EXE::ELF EXE::AR EXE::CHM
-    LNK Font VCard VCard::VCalendar RSRC Rawzor ZIP ZIP::GZIP ZIP::RAR RTF OOXML
-    iWork ISO FLIR::AFF FLIR::FPF
+    SigmaRaw JPEG GIMP Jpeg2000 GIF BMP BMP::OS2 BMP::Extra BPG BPG::Extensions
+    PICT PNG MNG FLIF DjVu DPX OpenEXR MIFF PGF PSP PhotoCD Radiance PDF
+    PostScript Photoshop::Header Photoshop::Layers Photoshop::ImageData
+    FujiFilm::RAF FujiFilm::IFD Samsung::Trailer Sony::SRF2 Sony::SR2SubIFD
+    Sony::PMP ITC ID3 FLAC Ogg Vorbis APE APE::NewHeader APE::OldHeader Audible
+    MPC MPEG::Audio MPEG::Video MPEG::Xing M2TS QuickTime QuickTime::ImageFile
+    Matroska MOI MXF DV Flash Flash::FLV Real::Media Real::Audio Real::Metafile
+    RIFF AIFF ASF DICOM MIE JSON HTML XMP::SVG Palm Palm::MOBI Palm::EXTH
+    Torrent EXE EXE::PEVersion EXE::PEString EXE::MachO EXE::PEF EXE::ELF
+    EXE::AR EXE::CHM LNK Font VCard VCard::VCalendar RSRC Rawzor ZIP ZIP::GZIP
+    ZIP::RAR RTF OOXML iWork ISO FLIR::AFF FLIR::FPF MacOS::MDItem MacOS::XAttr
 );
 
 # alphabetical list of current Lang modules
@@ -177,7 +177,7 @@ $defaultLang = 'en';    # default language
                 MPC MKV MXF DV PMP IND PGF ICC ITC FLIR FLIF FPF LFP HTML VRD
                 RTF XCF DSS QTIF FPX PICT ZIP GZIP PLIST RAR BZ2 TAR RWZ EXE EXR
                 HDR CHM LNK WMF AVC DEX DPX RAW Font RSRC M2TS PHP Torrent VCard
-                AA PDB MOI ISO MP3 DICOM PCD);
+                AA PDB MOI ISO JSON MP3 DICOM PCD);
 
 # file types that we can write (edit)
 my @writeTypes = qw(JPEG TIFF GIF CRW MRW ORF RAF RAW PNG MIE PSD XMP PPM EPS
@@ -186,7 +186,7 @@ my %writeTypes; # lookup for writable file types (hash filled if required)
 
 # file extensions that we can't write for various base types
 %noWriteFile = (
-    TIFF => [ qw(3FR DCR K25 KDC) ],
+    TIFF => [ qw(3FR DCR K25 KDC SRF) ],
     XMP  => [ 'SVG' ],
     JP2  => [ 'J2C', 'JPC' ],
 );
@@ -318,6 +318,7 @@ my %fileTypeLookup = (
     JPG =>   'JPEG',
     JPM  => ['JP2',  'JPEG 2000 compound image'],
     JPX  => ['JP2',  'JPEG 2000 with extensions'],
+    JSON => ['JSON', 'JavaScript Object Notation'],
     JXR  => ['TIFF', 'JPEG XR'],
     K25  => ['TIFF', 'Kodak DC25 RAW'],
     KDC  => ['TIFF', 'Kodak Digital Camera RAW'],
@@ -334,6 +335,7 @@ my %fileTypeLookup = (
     M4B  => ['MOV',  'MPEG-4 audio Book'],
     M4P  => ['MOV',  'MPEG-4 Protected'],
     M4V  => ['MOV',  'MPEG-4 Video'],
+    MAX  => ['FPX',  '3D Studio MAX'],
     MEF  => ['TIFF', 'Mamiya (RAW) Electronic Format'],
     MIE  => ['MIE',  'Meta Information Encapsulation format'],
     MIF  =>  'MIFF',
@@ -417,6 +419,7 @@ my %fileTypeLookup = (
     PS3  =>  'PS',
     PSB  => ['PSD',  'Photoshop Large Document'],
     PSD  => ['PSD',  'Photoshop Document'],
+    PSDT => ['PSD',  'Photoshop Document Template'],
     PSP  => ['PSP',  'Paint Shop Pro'],
     PSPFRAME => 'PSP',
     PSPIMAGE => 'PSP',
@@ -581,10 +584,12 @@ my %fileDescription = (
     JPEG => 'image/jpeg',
     JPM  => 'image/jpm',
     JPX  => 'image/jpx',
+    JSON => 'application/json',
     K25  => 'image/x-kodak-k25',
     KDC  => 'image/x-kodak-kdc',
     LFP  => 'image/x-lytro-lfp', #PH (NC)
     LNK  => 'application/octet-stream',
+    MAX  => 'application/x-3ds',
     M2T  => 'video/mpeg',
     M2TS => 'video/m2ts',
     MEF  => 'image/x-mamiya-mef',
@@ -795,6 +800,7 @@ my %moduleName = (
     ITC  => '.{4}itch',
     JP2  => '(\0\0\0\x0cjP(  |\x1a\x1a)\x0d\x0a\x87\x0a|\xff\x4f\xff\x51\0)',
     JPEG => '\xff(\xd8\xff|\x01Exiv2)', # (includes EXV so we don't have to add EXV to @fileTypes)
+    JSON => '\s*(\[\s*)?\{\s*"[^"]+"\s*:',
     LFP  => '\x89LFP\x0d\x0a\x1a\x0a',
     LNK  => '.{4}\x01\x14\x02\0{5}\xc0\0{6}\x46',
     M2TS => '(....)?\x47',
@@ -952,7 +958,7 @@ my %systemTagsNotes = (
         Priority => 0,
         Groups => \%allGroupsExifTool,
         Notes => q{
-            returns warnings that may have occurred while reading or writing a file. 
+            returns warnings that may have occurred while reading or writing a file.
             Use the -a or Duplicates option to see all warnings if more than one
             occurred. Minor warnings may be ignored with the -m or IgnoreMinorErrors
             option.  Minor warnings with a capital "M" in the "[Minor]" designation
@@ -973,6 +979,8 @@ my %systemTagsNotes = (
             directory that will be created if doesn't already exist
         },
         Writable => 1,
+        WritePseudo => 1,
+        DelCheck => q{"Can't delete"},
         Protected => 1,
         RawConv => '$self->ConvertFileName($val)',
         # translate backslashes in directory names and add trailing '/'
@@ -981,6 +989,8 @@ my %systemTagsNotes = (
     FileName => {
         Groups => { 1 => 'System' },
         Writable => 1,
+        WritePseudo => 1,
+        DelCheck => q{"Can't delete"},
         Protected => 1,
         Notes => q{
             may be written with a full path name to set FileName and Directory in one
@@ -996,11 +1006,14 @@ my %systemTagsNotes = (
         Groups => { 1 => 'System' },
         Notes => q{
             absolute path of source file. Not generated unless specifically requested or
-            the RequestAll API option is set
+            the RequestAll API option is set.  Does not support Windows Unicode file
+            names
         },
     },
     TestName => {
         Writable => 1,
+        WritePseudo => 1,
+        DelCheck => q{"Can't delete"},
         Protected => 1,
         WriteOnly => 1,
         Notes => q{
@@ -1060,6 +1073,8 @@ my %systemTagsNotes = (
         },
         Groups => { 1 => 'System', 2 => 'Time' },
         Writable => 1,
+        WritePseudo => 1,
+        DelCheck => q{"Can't delete"},
         # all writable pseudo-tags must be protected so -tagsfromfile fails with
         # unrecognized files unless a pseudo tag is specified explicitly
         Protected => 1,
@@ -1083,16 +1098,13 @@ my %systemTagsNotes = (
         Description => 'File Creation Date/Time',
         Notes => q{
             the filesystem creation date/time.  Windows only.  Requires Win32API::File
-            and Win32::API for writing.  Note that although ExifTool does not currently
-            support FileCreateDate on other systems, the OS X file creation date may be
-            accessed via the MDItemFSCreationDate tag when the MDItemTags API option is
-            set, and may be written indirectly via the FileModifyDate tag by following
-            these steps:  1. Rewrite the file to set the filesystem creation and
-            modification times to the current time, 2. Set FileModifyDate to the desired
-            creation time, then 3. Restore FileModifyDate to its original value
+            and Win32::API for writing.  See L<MDItemFSCreationDate|MacOS.html#MDItem>
+            for the Mac OS X equivalent
         },
         Groups => { 1 => 'System', 2 => 'Time' },
         Writable => 1,
+        WritePseudo => 1,
+        DelCheck => q{"Can't delete"},
         Protected => 1, # all writable pseudo-tags must be protected!
         Shift => 'Time',
         ValueConv => 'ConvertUnixTime($val,1)',
@@ -1124,6 +1136,8 @@ my %systemTagsNotes = (
             this value should be done in octal, eg. 'oct($filePermissions#) & 0200'
         },
         Writable => 1,
+        WritePseudo => 1,
+        DelCheck => q{"Can't delete"},
         Protected => 1, # all writable pseudo-tags must be protected!
         ValueConv => 'sprintf("%.3o", $val & 0777)',
         ValueConvInv => 'oct($val)',
@@ -1204,13 +1218,41 @@ my %systemTagsNotes = (
     FileDeviceNumber => { Groups => { 1 => 'System' }, %systemTagsNotes },
     FileInodeNumber  => { Groups => { 1 => 'System' }, %systemTagsNotes },
     FileHardLinks    => { Groups => { 1 => 'System' }, %systemTagsNotes },
-    FileUserID       => { Groups => { 1 => 'System' }, %systemTagsNotes, PrintConv => 'eval { getpwuid($val) } || $val' },
-    FileGroupID      => { Groups => { 1 => 'System' }, %systemTagsNotes, PrintConv => 'eval { getgrgid($val) } || $val' },
+    FileUserID => {
+        Groups => { 1 => 'System' },
+        Notes => q{
+            extracted only if specifically requested or the SystemTags or RequestAll API
+            option is set.  Returns user ID number with the -n option, or name
+            otherwise.  May be written with either user name or number
+        },
+        Writable => 1,
+        WritePseudo => 1,
+        DelCheck => q{"Can't delete"},
+        Protected => 1, # all writable pseudo-tags must be protected!
+        PrintConv => 'eval { getpwuid($val) } || $val',
+        PrintConvInv => 'eval { getpwnam($val) } || ($val=~/[^0-9]/ ? undef : $val)',
+    },
+    FileGroupID => {
+        Groups => { 1 => 'System' },
+        Notes => q{
+            extracted only if specifically requested or the SystemTags or RequestAll API
+            option is set.  Returns group ID number with the -n option, or name
+            otherwise.  May be written with either group name or number
+        },
+        Writable => 1,
+        WritePseudo => 1,
+        DelCheck => q{"Can't delete"},
+        Protected => 1, # all writable pseudo-tags must be protected!
+        PrintConv => 'eval { getgrgid($val) } || $val',
+        PrintConvInv => 'eval { getgrnam($val) } || ($val=~/[^0-9]/ ? undef : $val)',
+    },
     FileBlockSize    => { Groups => { 1 => 'System' }, %systemTagsNotes },
     FileBlockCount   => { Groups => { 1 => 'System' }, %systemTagsNotes },
     HardLink => {
         Writable => 1,
+        DelCheck => q{"Can't delete"},
         WriteOnly => 1,
+        WritePseudo => 1,
         Protected => 1,
         Notes => q{
             this write-only tag is used to create a hard link to the file.  If the file
@@ -1229,7 +1271,10 @@ my %systemTagsNotes = (
     YResolution => { Notes => 'the vertical pixel resolution' },
     MaxVal      => { Notes => 'maximum pixel value in PPM or PGM image' },
     EXIF => {
-        Notes => 'the full EXIF data block from JPEG, PNG, JP2, MIE and MIFF images',
+        Notes => q{
+            the full EXIF data block from JPEG, PNG, JP2, MIE and MIFF images. This tag
+            is generated only if specifically requested
+        },
         Groups => { 0 => 'EXIF', 1 => 'EXIF' },
         Flags => ['Writable' ,'Protected', 'Binary'],
         WriteCheck => q{
@@ -1238,7 +1283,10 @@ my %systemTagsNotes = (
         },
     },
     IPTC => {
-        Notes => 'the full IPTC data block',
+        Notes => q{
+            the full IPTC data block.  This tag is generated only if specifically
+            requested
+        },
         Groups => { 0 => 'IPTC', 1 => 'IPTC' },
         Flags => ['Writable', 'Protected', 'Binary'],
         Priority => 0,  # so main IPTC (which hopefully comes first) takes priority
@@ -1250,7 +1298,7 @@ my %systemTagsNotes = (
     XMP => {
         Notes => q{
             the XMP data block, but note that extended XMP in JPEG images may be split
-            into multiple blocks
+            into multiple blocks.  This tag is generated only if specifically requested
         },
         Groups => { 0 => 'XMP', 1 => 'XMP' },
         Flags => ['Writable', 'Protected', 'Binary'],
@@ -1261,7 +1309,10 @@ my %systemTagsNotes = (
         },
     },
     ICC_Profile => {
-        Notes => 'the full ICC_Profile data block',
+        Notes => q{
+            the full ICC_Profile data block.  This tag is generated only if specifically
+            requested
+        },
         Groups => { 0 => 'ICC_Profile', 1 => 'ICC_Profile' },
         Flags => ['Writable' ,'Protected', 'Binary'],
         WriteCheck => q{
@@ -1270,7 +1321,10 @@ my %systemTagsNotes = (
         },
     },
     CanonVRD => {
-        Notes => 'the full Canon DPP VRD trailer block',
+        Notes => q{
+            the full Canon DPP VRD trailer block.  This tag is generated only if
+            specifically requested
+        },
         Groups => { 0 => 'CanonVRD', 1 => 'CanonVRD' },
         Flags => ['Writable' ,'Protected', 'Binary'],
         Permanent => 0, # (this is 1 by default for MakerNotes tags)
@@ -1280,7 +1334,10 @@ my %systemTagsNotes = (
         },
     },
     CanonDR4 => {
-        Notes => 'the full Canon DPP version 4 DR4 block',
+        Notes => q{
+            the full Canon DPP version 4 DR4 block.  This tag is generated only if
+            specifically requested
+        },
         Groups => { 0 => 'CanonVRD', 1 => 'CanonVRD' },
         Flags => ['Writable' ,'Protected', 'Binary'],
         Permanent => 0, # (this is 1 by default for MakerNotes tags)
@@ -1313,6 +1370,7 @@ my %systemTagsNotes = (
         Groups => { 2 => 'Preview' },
         Writable => 1,
         WriteCheck => '$self->CheckImage(\$val)',
+        WriteGroup => 'All',
         # can't delete, so set to empty string and return no error
         DelCheck => '$val = ""; return undef',
         # accept either scalar or scalar reference
@@ -1335,6 +1393,7 @@ my %systemTagsNotes = (
     },
     ExifByteOrder => {
         Writable => 1,
+        DelCheck => q{"Can't delete"},
         Notes => q{
             represents the byte order of EXIF information.  May be written to set the
             byte order only for newly created EXIF segments
@@ -1347,6 +1406,7 @@ my %systemTagsNotes = (
     ExifUnicodeByteOrder => {
         Writable => 1,
         WriteOnly => 1,
+        DelCheck => q{"Can't delete"},
         Notes => q{
             specifies the byte order to use when writing EXIF Unicode text.  The EXIF
             specification is particularly vague about this byte ordering, and different
@@ -1380,14 +1440,16 @@ my %systemTagsNotes = (
             sub-sampling values to generate the value of this tag.  The result is
             compared to known values in an attempt to deduce the originating software
             based only on the JPEG image data.  For performance reasons, this tag is
-            generated only if specifically requested
+            generated only if specifically requested or the RequestAll API option is set
+            to 3 or higher
         },
     },
     JPEGQualityEstimate => {
         Notes => q{
             an estimate of the IJG JPEG quality setting for the image, calculated from
             the quantization tables.  For performance reasons, this tag is generated
-            only if specifically requested
+            only if specifically requested or the RequestAll API option is set to 3 or
+            higher
         },
     },
     Now => {
@@ -1414,6 +1476,7 @@ my %systemTagsNotes = (
     Geotag => {
         Writable => 1,
         WriteOnly => 1,
+        WriteNothing => 1,
         AllowGroup => '(exif|gps|xmp|xmp-exif)',
         Notes => q{
             this write-only tag is used to define the GPS track log data or track log
@@ -1464,6 +1527,7 @@ my %systemTagsNotes = (
     Geosync => {
         Writable => 1,
         WriteOnly => 1,
+        WriteNothing => 1,
         AllowGroup => '(exif|gps|xmp|xmp-exif)',
         Shift => 'Time', # enables "+=" syntax as well as "=+"
         Notes => q{
@@ -1478,15 +1542,6 @@ my %systemTagsNotes = (
         ValueConvInv => q{
             require Image::ExifTool::Geotag;
             return Image::ExifTool::Geotag::ConvertGeosync($self, $val);
-        },
-    },
-    MDItemTags => {
-        Groups => { 1 => 'System', 2 => 'Other' },
-        Notes => q{
-            not a real tag.  On OS X, a whole range of system-specific metadata tags
-            with names starting with "MDItem" may be extracted if specifically
-            requested, or if the MDItemTags API option is set.  Requires that the "mdls"
-            utility is available
         },
     },
 );
@@ -1615,7 +1670,7 @@ sub SetWarning($) { $evalWarning = $_[0]; }
 sub GetWarning()  { return $evalWarning; }
 
 # Clean unnecessary information (line number, LF) from warning
-# Inputs: 0) warning string or undef to use current warning
+# Inputs: 0) warning string or undef to use $evalWarning
 # Returns: cleaned warning
 sub CleanWarning(;$)
 {
@@ -1645,6 +1700,7 @@ sub new
 
     $self->ClearOptions();      # create default options hash
     $$self{VALUE} = { };        # must initialize this for warning messages
+    $$self{PATH} = [ ];         # (this too)
     $$self{DEL_GROUP} = { };    # lookup for groups to delete when writing
     $$self{SAVE_COUNT} = 0;     # count calls to SaveNewValues()
     $$self{FILE_SEQUENCE} = 0;  # sequence number for files when reading
@@ -1798,12 +1854,15 @@ sub Options($$;@)
         } elsif ($param eq 'RequestTags') {
             if (defined $newVal) {
                 # parse list from delimited string if necessary
-                my @reqList = (ref $newVal eq 'ARRAY') ? @$newVal : ($newVal =~ /(?:[-\w]+:)*[-\w?*]+/g);
+                my @reqList = (ref $newVal eq 'ARRAY') ? @$newVal : ($newVal =~ /[-\w?*:]+/g);
                 ExpandShortcuts(\@reqList);
                 # add to existing list
                 $$options{$param} or $$options{$param} = [ ];
                 foreach (@reqList) {
-                    push @{$$options{$param}}, lc($2) if /(^|:)([-\w?*]+)#?$/;
+                    /^(.*:)?([-\w?*]*)#?$/ or next;
+                    push @{$$options{$param}}, lc($2) if $2;
+                    next unless $1;
+                    push @{$$options{$param}}, lc($_).':' foreach split /:/, $1;
                 }
             } else {
                 $$options{$param} = undef;  # clear the list
@@ -1887,7 +1946,7 @@ sub ClearOptions($)
         ListSep     => ', ',    # list item separator
         ListSplit   => undef,   # regex for splitting list-type tag values when writing
         MakerNotes  => undef,   # extract maker notes as a block
-        MDItemTags  => undef,   # extract OS X metadata item tags
+        MDItemTags  => undef,   # extract MacOS metadata item tags
         MissingTagValue =>undef,# value for missing tags when expanded in expressions
         NoPDFList   => undef,   # flag to avoid splitting PDF List-type tag values
         Password    => undef,   # password for password-protected PDF documents
@@ -1906,8 +1965,10 @@ sub ClearOptions($)
         TextOut     => \*STDOUT,# file for Verbose/HtmlDump output
         Unknown     => 0,       # flag to get values of unknown tags (0-2)
         UserParam   => { },     # user parameters for InsertTagValues()
+        Validate    => undef,   # perform additional validation
         Verbose     => 0,       # print verbose messages (0-5, higher # = more verbose)
         WriteMode   => 'wcg',   # enable all write modes by default
+        XAttrTags   => undef,   # extract MacOS extended attribute tags
         XMPAutoConv => 1,       # automatic conversion of unknown XMP tag values
     };
     # keep necessary member variables in sync with options
@@ -1936,7 +1997,7 @@ sub ExtractInfo($;@)
     my $options = $$self{OPTIONS};      # pointer to current options
     my $fast = $$options{FastScan};
     my $req = $$self{REQ_TAG_LOOKUP};
-    my $reqAll = $$options{RequestAll};
+    my $reqAll = $$options{RequestAll} || 0;
     my (%saveOptions, $reEntry, $rsize, $type, @startTime);
 
     # check for internal ReEntry option to allow recursive calls to ExtractInfo
@@ -1956,11 +2017,13 @@ sub ExtractInfo($;@)
         delete $$self{EXIF_DATA};
         delete $$self{EXIF_POS};
     } else {
-        if (defined $_[0] or $$options{HtmlDump}) {
+        if (defined $_[0] or $$options{HtmlDump} or $$req{validate}) {
             %saveOptions = %$options;       # save original options
 
             # require duplicates for html dump
             $self->Options(Duplicates => 1) if $$options{HtmlDump};
+            # enable Validate option if Validate tag is requested
+            $self->Options(Validate => 1) if $$req{validate};
 
             if (defined $_[0]) {
                 # only initialize filename if called with arguments
@@ -1989,8 +2052,10 @@ sub ExtractInfo($;@)
                 $self->WarnOnce('Install Time::HiRes to generate ProcessingTime');
             }
         }
+
         ++$$self{FILE_SEQUENCE};        # count files read
     }
+
     my $filename = $$self{FILENAME};    # image file name ('' if already open)
     my $raf = $$self{RAF};              # RandomAccess object
 
@@ -2045,7 +2110,7 @@ sub ExtractInfo($;@)
     }
 
     if ($raf) {
-        my @stat;
+        my (@stat, $fileSize);
         if ($reEntry) {
             # we already set these tags
         } elsif (not $$raf{FILE_PT}) {
@@ -2053,7 +2118,7 @@ sub ExtractInfo($;@)
             $self->FoundTag('FileSize', length ${$$raf{BUFF_PT}});
         } elsif (-f $$raf{FILE_PT}) {
             # get file tags if this is a plain file
-            my $fileSize = -s _;
+            $fileSize = -s _;
             @stat = stat _;
             my ($aTime, $mTime, $cTime) = $self->GetFileTime($$raf{FILE_PT});
             $self->FoundTag('FileSize', $fileSize) if defined $fileSize;
@@ -2096,65 +2161,15 @@ sub ExtractInfo($;@)
             $self->FoundTag('FileBlockSize', $stat[11])   if $sys or $$req{fileblocksize};
             $self->FoundTag('FileBlockCount', $stat[12])  if $sys or $$req{fileblockcount};
         }
-        # extract MDItem tags if requested (not extracted with RequestAll for performance reasons)
-        if ($^O eq 'darwin' and ($$options{MDItemTags} || grep /^mditem/i, keys %$req) and
-            defined $filename and $filename ne '' and $filename ne '-')
-        {
-            my ($fn, $tag, $val);
-            local $SIG{'__WARN__'} = \&SetWarning;
-            undef $evalWarning;
-            ($fn = $filename) =~ s/([`"\$\\])/\\$1/g;     # escape necessary characters
-            my @mdls = eval {`mdls "$fn" 2> /dev/null`};  # get OS X metadata
-            unless ($evalWarning) {
-                my $extra = GetTagTable('Image::ExifTool::Extra');
-                foreach (@mdls) {
-                    chomp;
-                    if (ref $val ne 'ARRAY') {
-                        s/^k(MDItem\w+)\s*= // or next;
-                        $tag = $1;
-                        $_ eq '(' and $val = [ ], next; # (start of a list)
-                        $_ = '' if $_ eq '(null)';
-                        s/^"// and s/"$//;  # remove quotes if they exist
-                        $val = $_;
-                    } elsif ($_ eq ')') {   # (end of a list)
-                        $_ = $$val[0];
-                        next unless defined $_;
-                    } else {
-                        # add item to list
-                        s/^    //;          # remove leading spaces
-                        s/,$//;             # remove trailing comma
-                        $_ = '' if $_ eq '(null)';
-                        s/^"// and s/"$//;  # remove quotes if they exist
-                        push @$val, $_;
-                        next;
-                    }
-                    # add to Extra tags if not done already
-                    unless ($$extra{$tag}) {
-                        # check for a date/time format
-                        my %tagInfo = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/ ? (
-                            Groups => { 1 => 'System', 2 => 'Time' },
-                            ValueConv => sub {
-                                my $val = shift;
-                                $val =~ tr/-/:/;
-                                $val =~ s/ ?([-+]\d{2}):?(\d{2})/$1:$2/;
-                                # convert from UTC to local time
-                                if ($val =~ /\+00:00$/) {
-                                    my $time = GetUnixTime($val);
-                                    $val = ConvertUnixTime($time, 1) if $time;
-                                }
-                                return $val;
-                            },
-                            PrintConv => '$self->ConvertDateTime($val)',
-                        ) : ( Groups => { 1 => 'System', 2 => 'Other' } );
-                        $tagInfo{Name} = $tag;
-                        $tagInfo{List} = 1 if ref $val eq 'ARRAY';
-                        $tagInfo{Groups}{2} = 'Audio' if $tag =~ /Audio/;
-                        $tagInfo{Groups}{2} = 'Author' if $tag =~ /(Copyright|Author)/;
-                        AddTagToTable($extra, $tag, \%tagInfo);
-                    }
-                    $self->FoundTag($tag, $val);
-                    undef $val;
-                }
+        # extract MDItem tags if requested (only on plain files)
+        if ($^O eq 'darwin' and defined $filename and $filename ne '' and defined $fileSize) {
+            my $reqMacOS = ($reqAll > 1 or $$req{'macos:'});
+            my $mdItem = ($reqMacOS || $$options{MDItemTags} || grep /^mditem/, keys %$req);
+            my $xattr  = ($reqMacOS || $$options{XAttrTags}  || grep /^xattr/,  keys %$req);
+            if ($mdItem or $xattr) {
+                require Image::ExifTool::MacOS;
+                Image::ExifTool::MacOS::ExtractMDItemTags($self, $filename) if $mdItem;
+                Image::ExifTool::MacOS::ExtractXAttrTags($self, $filename) if $xattr;
             }
         }
 
@@ -2314,6 +2329,13 @@ sub ExtractInfo($;@)
             }
         }
     }
+
+    # generate Validate tag if requested
+    if ($$options{Validate} and not $reEntry) {
+        require Image::ExifTool::Validate;
+        Image::ExifTool::Validate::FinishValidate($self, $$req{validate});
+    }
+
     @startTime and $self->FoundTag('ProcessingTime', Time::HiRes::tv_interval(\@startTime));
 
     # restore original options
@@ -3291,6 +3313,7 @@ sub Init($)
     $$self{PRIORITY_DIR} = '';      # the priority directory name
     $$self{LOW_PRIORITY_DIR} = { PreviewIFD => 1 }; # names of priority 0 directories
     $$self{TIFF_TYPE}  = '';        # type of TIFF data (APP1, TIFF, NEF, etc...)
+    $$self{FMT_EXPR}   = undef;     # current advanced formatting expression
     $$self{Make}       = '';        # camera make
     $$self{Model}      = '';        # camera model
     $$self{CameraType} = '';        # Olympus camera type
@@ -3398,21 +3421,23 @@ sub EncodeFileName($$;$)
 {
     my ($self, $file, $force) = @_;
     my $enc = $$self{OPTIONS}{CharsetFileName};
-    if ($enc and ($file =~ /[\x80-\xff]/ or $force)) {
-        # encode for use in Windows Unicode functions if necessary
-        if ($^O eq 'MSWin32') {
-            local $SIG{'__WARN__'} = \&SetWarning;
-            if (eval { require Win32API::File }) {
-                # recode as UTF-16LE and add null terminator
-                $_[1] = $self->Decode($file, $enc, undef, 'UTF16', 'II') . "\0\0";
-                return 1;
+    if ($enc) {
+        if ($file =~ /[\x80-\xff]/ or $force) {
+            # encode for use in Windows Unicode functions if necessary
+            if ($^O eq 'MSWin32') {
+                local $SIG{'__WARN__'} = \&SetWarning;
+                if (eval { require Win32API::File }) {
+                    # recode as UTF-16LE and add null terminator
+                    $_[1] = $self->Decode($file, $enc, undef, 'UTF16', 'II') . "\0\0";
+                    return 1;
+                }
+                $self->WarnOnce('Install Win32API::File for Windows Unicode file support');
+            } else {
+                # recode as UTF-8 for other platforms if necessary
+                $_[1] = $self->Decode($file, $enc, undef, 'UTF8') unless $enc eq 'UTF8';
             }
-            $self->WarnOnce('Install Win32API::File for Windows Unicode file support');
-        } else {
-            # recode as UTF-8 for other platforms if necessary
-            $_[1] = $self->Decode($file, $enc, undef, 'UTF8') unless $enc eq 'UTF8';
         }
-    } elsif ($^O eq 'MSWin32' and $file =~ /[\x80-\xff]/) {
+    } elsif ($^O eq 'MSWin32' and $file =~ /[\x80-\xff]/ and not defined $enc) {
         require Image::ExifTool::XMP;
         if (Image::ExifTool::XMP::IsUTF8(\$file) < 0) {
             $self->WarnOnce('FileName encoding not specified');
@@ -3648,7 +3673,10 @@ sub ParseArguments($;@)
         ExpandShortcuts($$self{REQUESTED_TAGS});
         # initialize lookup for requested tags
         foreach (@{$$self{REQUESTED_TAGS}}) {
-            /(^|:)([-\w?*]+)#?$/ and $$self{REQ_TAG_LOOKUP}{lc($2)} = 1;
+            /^(.*:)?([-\w?*]*)#?$/ or next;
+            $$self{REQ_TAG_LOOKUP}{lc($2)} = 1 if $2;
+            next unless $1;
+            $$self{REQ_TAG_LOOKUP}{lc($_).':'} = 1 foreach split /:/, $1;
         }
     }
     if (@exclude or $wasExcludeOpt) {
@@ -5612,6 +5640,7 @@ sub ProcessJPEG($$)
                 }
                 next if $trailInfo or $wantTrailer or $verbose > 2 or $htmlDump;
             }
+            next if $$self{OPTIONS}{Validate};  # (validate to EOI)
             # nothing interesting to parse after start of scan (SOS)
             $success = 1;
             last;   # all done parsing file
@@ -5627,11 +5656,12 @@ sub ProcessJPEG($$)
             next;
         } elsif ($marker == 0xdb and length($$segDataPt) and    # DQT
             # save the DQT data only if JPEGDigest has been requested
-            # (Note: this will not work with the application -p option
-            #  because we aren't checking the RequestAll API option here.
-            #  The reason is that there is too much overhead involved in
-            #  the calculation of this tag to make this worth the CPU time.)
-            ($$self{REQ_TAG_LOOKUP}{jpegdigest} or $$self{REQ_TAG_LOOKUP}{jpegqualityestimate}))
+            # (Note: since we aren't checking the RequestAll API option here, the application
+            #  must use the RequestTags option to generate these tags if they have not been
+            #  specifically requested.  The reason is that there is too much overhead involved
+            #  in the calculation of this tag to make this worth the CPU time.)
+            ($$self{REQ_TAG_LOOKUP}{jpegdigest} or $$self{REQ_TAG_LOOKUP}{jpegqualityestimate}
+            or ($$self{OPTIONS}{RequestAll} and $$self{OPTIONS}{RequestAll} > 2)))
         {
             my $num = unpack('C',$$segDataPt) & 0x0f;   # get table index
             $dqt[$num] = $$segDataPt if $num < 4;       # save for MD5 calculation
@@ -6406,7 +6436,7 @@ sub DoProcessTIFF($$;$)
     }
     my $ifdName = 'IFD0';
     if (not $tagTablePtr or $$tagTablePtr{GROUPS}{0} eq 'EXIF') {
-        $self->FoundTag('ExifByteOrder', $byteOrder);
+        $self->FoundTag('ExifByteOrder', $byteOrder) unless $outfile;
     } else {
         $ifdName = $$tagTablePtr{GROUPS}{1};
     }
@@ -6464,7 +6494,7 @@ sub DoProcessTIFF($$;$)
         # update FileType if necessary now that we know more about the file
         if ($$self{DNGVersion} and $$self{VALUE}{FileType} ne 'DNG') {
             # override whatever FileType we set since we now know it is DNG
-            $self->OverrideFileType('DNG');
+            $self->OverrideFileType($$self{TIFF_TYPE} = 'DNG');
         }
         return 1;
     }
@@ -6755,8 +6785,7 @@ sub ProcessDirectory($$$;$)
         $$self{PROCESSED}{$addr} = $dirName;
     }
     my $oldOrder = GetByteOrder();
-    my $oldIndent = $$self{INDENT};
-    my $oldDir = $$self{DIR_NAME};
+    my @save = @$self{'INDENT','DIR_NAME','Compression','SubfileType'};
     $$self{LIST_TAGS} = { };    # don't build lists across different directories
     $$self{INDENT} .= '| ';
     $$self{DIR_NAME} = $dirName;
@@ -6766,8 +6795,7 @@ sub ProcessDirectory($$$;$)
     my $rtnVal = &$proc($self, $dirInfo, $tagTablePtr);
 
     pop @{$$self{PATH}};
-    $$self{INDENT} = $oldIndent;
-    $$self{DIR_NAME} = $oldDir;
+    @$self{'INDENT','DIR_NAME','Compression','SubfileType'} = @save;
     SetByteOrder($oldOrder);
     return $rtnVal;
 }
@@ -7013,8 +7041,9 @@ sub HandleTag($$$$;%)
                 if (ref $conv eq 'CODE') {
                     $val = &$conv($val, $self);
                 } else {
+                    my ($priority, @grps);
                     # NOTE: RawConv is evaluated in Writer.pl and twice in ExifTool.pm
-                    #### eval RawConv ($self, $val, $tag, $tagInfo)
+                    #### eval RawConv ($self, $val, $tag, $tagInfo, $priority, @grps)
                     $val = eval $conv;
                     $@ and $evalWarning = $@;
                 }
@@ -7068,11 +7097,12 @@ sub HandleTag($$$$;%)
 # Inputs: 0) ExifTool object reference
 #         1) reference to tagInfo hash or tag name
 #         2) data value (or reference to require hash if Composite)
+#         3) optional family 0 group, 4) optional family 1 group
 # Returns: tag key or undef if no value
 sub FoundTag($$$)
 {
     local $_;
-    my ($self, $tagInfo, $value) = @_;
+    my ($self, $tagInfo, $value, @grps) = @_;
     my ($tag, $noListDel);
 
     if (ref $tagInfo eq 'HASH') {
@@ -7092,6 +7122,8 @@ sub FoundTag($$$)
         $priority = $$tagInfo{Table}{PRIORITY};
         $priority = 0 if not defined $priority and $$tagInfo{Avoid};
     }
+    $grps[0] or $grps[0] = $$self{SET_GROUP0};
+    $grps[1] or $grps[1] = $$self{SET_GROUP1};
     my $valueHash = $$self{VALUE};
     if ($$tagInfo{RawConv}) {
         # initialize @val for use in Composite RawConv expressions
@@ -7104,10 +7136,11 @@ sub FoundTag($$$)
         undef $evalWarning;
         if (ref $conv eq 'CODE') {
             $value = &$conv($value, $self);
+            $$self{grps} and @grps = @{$$self{grps}}, delete $$self{grps};
         } else {
             my $val = $value;   # do this so eval can use $val
             # NOTE: RawConv is also evaluated in Writer.pl
-            #### eval RawConv ($self, $val, $tag, $tagInfo, $priority)
+            #### eval RawConv ($self, $val, $tag, $tagInfo, $priority, @grps)
             $value = eval $conv;
             $@ and $evalWarning = $@;
         }
@@ -7196,8 +7229,8 @@ sub FoundTag($$$)
     $$self{FILE_ORDER}{$tag} = ++$$self{NUM_FOUND};
     $$self{TAG_INFO}{$tag} = $tagInfo;
     # set dynamic groups 0, 1 and 3 if necessary
-    $$self{TAG_EXTRA}{$tag}{G0} = $$self{SET_GROUP0} if $$self{SET_GROUP0};
-    $$self{TAG_EXTRA}{$tag}{G1} = $$self{SET_GROUP1} if $$self{SET_GROUP1};
+    $$self{TAG_EXTRA}{$tag}{G0} = $grps[0] if $grps[0];
+    $$self{TAG_EXTRA}{$tag}{G1} = $grps[1] if $grps[1];
     if ($$self{DOC_NUM}) {
         $$self{TAG_EXTRA}{$tag}{G3} = $$self{DOC_NUM};
         if ($$self{DOC_NUM} =~ /^(\d+)/) {
@@ -7571,6 +7604,7 @@ sub ProcessBinaryData($$$)
                     $count *= 2 if $format eq 'ustr32';
                     $entry += 4;
                     $more -= 4;
+                    $nextIndex += 4 / $increment;   # (increment next index for int32u)
                 } elsif ($format eq 'int16u') {
                     # int16u size of binary data to follow
                     last if $more < 2;
