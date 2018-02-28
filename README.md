@@ -1,5 +1,5 @@
 # node-exiftool.pl
-A distribution of _exiftool_ perl executable with lib. Current version is 10.53.
+A distribution of _exiftool_ perl executable with lib. Current version is 10.81.
 
 [![npm version](https://badge.fury.io/js/exiftool.pl.svg)](https://badge.fury.io/js/exiftool.pl)
 [![Build Status](https://travis-ci.org/Sobesednik/node-exiftool.pl.svg?branch=master)](https://travis-ci.org/Sobesednik/node-exiftool.pl)
