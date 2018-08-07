@@ -58,7 +58,7 @@ use Image::ExifTool::Exif;
 use Image::ExifTool::GPS;
 use Image::ExifTool::HP;
 
-$VERSION = '3.14';
+$VERSION = '3.22';
 
 sub CryptShutterCount($$);
 sub PrintFilter($$$);
@@ -178,7 +178,8 @@ sub DecodeAFPoints($$$$;$);
     '4 2' => 'smc PENTAX-FA 80-320mm F4.5-5.6',
     '4 3' => 'smc PENTAX-FA 43mm F1.9 Limited',
     '4 6' => 'smc PENTAX-FA 35-80mm F4-5.6',
-    '4 10' => 'Irix 15mm F2.4', #forum3833
+    '4 9' => 'Irix 11mm F4 Firefly', #27
+    '4 10' => 'Irix 15mm F2.4', #27
     '4 12' => 'smc PENTAX-FA 50mm F1.4', #17
     '4 15' => 'smc PENTAX-FA 28-105mm F4-5.6 [IF]',
     '4 16' => 'Tamron AF 80-210mm F4-5.6 (178D)', #13
@@ -325,6 +326,7 @@ sub DecodeAFPoints($$$$;$);
     '8 30' => 'Sigma 17-70mm F2.8-4 DC Macro HSM | C', #27
     '8 31' => 'Sigma 18-35mm F1.8 DC HSM', #27
     '8 32' => 'Sigma 30mm F1.4 DC HSM | A', #27
+    '8 33' => 'Sigma 18-200mm F3.5-6.3 DC Macro HSM', #DieterPearcey (C014)
     '8 34' => 'Sigma 18-300mm F3.5-6.3 DC Macro HSM', #NJ
     '8 59' => 'HD PENTAX-D FA 150-450mm F4.5-5.6 ED DC AW', #29
     '8 60' => 'HD PENTAX-D FA* 70-200mm F2.8 ED DC AW', #29
@@ -532,6 +534,7 @@ my %pentaxModelID = (
     0x131f0 => 'WG-M2', # (Ricoh)
     0x13222 => 'K-70', #29 (Ricoh)
     0x1322c => 'KP', #29 (Ricoh)
+    0x13240 => 'K-1 Mark II', # (Ricoh)
 );
 
 # Pentax city codes - (PH, Optio WP)
@@ -944,6 +947,7 @@ my %binaryDataAttrs = (
             4 => 'RAW', #5
             5 => 'Premium', #PH (K20D)
             7 => 'RAW (pixel shift enabled)', #forum6536 (K-3 II)
+            8 => 'Dynamic Pixel Shift', #IB
             65535 => 'n/a', #PH (Q MOV video)
         },
     },
@@ -1489,7 +1493,7 @@ my %binaryDataAttrs = (
             284 => 409600, #PH (NC)
             285 => 576000, #PH (NC)
             286 => 819200, #PH (NC)
-            # 65534 Auto? (Q/Q10/Q7 MOV) PH
+            65534 => 'Auto 2', #PH (Q/Q10/Q7 MOV) [how is this different from 65535?]
             65535 => 'Auto', #PH/31 (K-01/K-70 MP4)
         },
     },
@@ -1503,14 +1507,28 @@ my %binaryDataAttrs = (
             approximate Light Value.  May not be valid for some models, eg. Optio S
         },
     },
-    0x0016 => { #PH
+    0x0016 => [{ #PH
         Name => 'ExposureCompensation',
+        Condition => '$count == 1',
+        Notes => q{
+            some models write two values here.  The second value is meaning of the
+            second value is not yet known
+        },
         Writable => 'int16u',
         ValueConv => '($val - 50) / 10',
         ValueConvInv => 'int($val * 10 + 50.5)',
         PrintConv => '$val ? sprintf("%+.1f", $val) : 0',
         PrintConvInv => 'Image::ExifTool::Exif::ConvertFraction($val)',
-    },
+    },{
+        Name => 'ExposureCompensation',
+        Writable => 'int16u',
+        # (2 values for K-70, etc -- have only seen "0" for the 2nd value - PH)
+        Count => 2,
+        ValueConv => '$val =~ s/ .*//; ($val - 50) / 10',
+        ValueConvInv => 'int($val * 10 + 50.5) . " 0"',
+        PrintConv => '$val ? sprintf("%+.1f", $val) : 0',
+        PrintConvInv => 'Image::ExifTool::Exif::ConvertFraction($val)',
+    }],
     0x0017 => { #3
         Name => 'MeteringMode',
         Writable => 'int16u',
@@ -1873,8 +1891,13 @@ my %binaryDataAttrs = (
             '18 3' => 'Auto Program (MTF)', #PH (NC)
             '18 22' => 'Auto Program (Shallow DOF)', #PH (NC)
             '20 22' => 'Blur Control', #PH (Q)
-            '254 0' => 'Video', #PH (K-7,K-5)
-            '255 0' => 'Video (Auto Aperture)', #PH (K-5)
+            '249 0' => 'Movie (TAv)', #31
+            '250 0' => 'Movie (TAv, Auto Aperture)', #31
+            '251 0' => 'Movie (Manual)', #31
+            '252 0' => 'Movie (Manual, Auto Aperture)', #31
+            '253 0' => 'Movie (Av)', #31
+            '254 0' => 'Movie (Av, Auto Aperture)', #31
+            '255 0' => 'Movie (P, Auto Aperture)', #31
             '255 4' => 'Video (4)', #PH (K-x,K-01)
         },{
             # EV step size (ref 19)
@@ -1905,13 +1928,16 @@ my %binaryDataAttrs = (
             1 => 'Remote Control (3 s delay)', #19
             2 => 'Remote Control', #19
             4 => 'Remote Continuous Shooting', # (K-5)
-            8 => 'Interval Shooting', #31
-            10 => 'Composite Average', #31
-            11 => 'Composite Additive', #31
-            12 => 'Composite Bright', #31
         },{
             0x00 => 'Single Exposure',
             0x01 => 'Multiple Exposure',
+            0x02 => 'Composite Average', #31
+            0x03 => 'Composite Additive', #31
+            0x04 => 'Composite Bright', #31
+            0x08 => 'Interval Shooting', #31
+            0x0a => 'Interval Composite Average', #31
+            0x0b => 'Interval Composite Additive', #31
+            0x0c => 'Interval Composite Bright', #31
             0x0f => 'Interval Movie', #PH (K-01)
             0x10 => 'HDR', #PH (645D)
             0x20 => 'HDR Strong 1', #PH (NC) (K-5)
@@ -2563,7 +2589,7 @@ my %binaryDataAttrs = (
     },
     # 0x0202: int16u[4]: all 0's in all my samples
     0x0203 => { #JD (not really sure what these mean)
-        Name => 'ColorMatrixA',
+        Name => 'ColorMatrixA', # (camera RGB to sRGB matrix, *ist D, ref IB)
         Writable => 'int16s',
         Count => 9,
         ValueConv => 'join(" ",map({ $_/8192 } split(" ",$val)))',
@@ -2572,7 +2598,7 @@ my %binaryDataAttrs = (
         PrintConvInv => '"$val"',
     },
     0x0204 => { #JD
-        Name => 'ColorMatrixB',
+        Name => 'ColorMatrixB', # (camera RGB to Adobe RGB matrix, *ist D, ref IB)
         Writable => 'int16s',
         Count => 9,
         ValueConv => 'join(" ",map({ $_/8192 } split(" ",$val)))',
@@ -2842,10 +2868,10 @@ my %binaryDataAttrs = (
         Groups => { 2 => 'Author' },
         Writable => 'string',
     },
-    0x0230 => { #PH (K-x AVI videos)
+    0x0230 => { #PH (K-x AVI videos) (and K-70/Q-S1 MOV videos, ref 31)
         Name => 'FirmwareVersion',
-        Notes => 'only in AVI videos',
-        # this tag only exists in AVI videos, and for the K-x the value of
+        Notes => 'only in videos',
+        # this tag only exists in AVI/MOV videos, and for the K-x the value of
         # this tag is "K-x Ver 1.00", which is the same as the EXIF Software
         # tag.  I used a different tag name for this because Pentax uses the
         # AVI Software tag for a different string, "PENTAX K-x".
@@ -2878,6 +2904,11 @@ my %binaryDataAttrs = (
     # 0x023b - undef[9] (K-01)
     #  01a700500000000000, 91a700500000000000, 41a700500000000000, 002700500000000000
     #  c00500400000000000, 400500500000000000, 4004ff420100000000, 4087ff480000000000
+    0x023f => { #31 (K-70 MOV videos)
+        Name => 'Model',
+        Description => 'Camera Model Name',
+        Writable => 'string',
+    },
     0x0243 => { #PH
         Name => 'PixelShiftInfo',
         SubDirectory => { TagTable => 'Image::ExifTool::Pentax::PixelShiftInfo' },
@@ -3011,8 +3042,10 @@ my %binaryDataAttrs = (
             5 => 'On but Disabled', # (NC for K-3)
             6 => 'On (Video)', # (NC for K-3)
             7 => 'On (AA simulation off)',
+            8 => 'Off (AA simulation type 1) (8)', #forum8362 (K-70)
             12 => 'Off (AA simulation type 1)', # (AA linear motion)
             15 => 'On (AA simulation type 1)', # (AA linear motion)
+            16 => 'Off (AA simulation type 2) (16)', #forum8362 (K-70)
             20 => 'Off (AA simulation type 2)', # (AA circular motion)
             23 => 'On (AA simulation type 2)', # (AA circular motion)
         },
@@ -5617,8 +5650,8 @@ my %binaryDataAttrs = (
             800 => 800, #PH
             1600 => 1600, #PH
             3200 => 3200, #PH
-            # seen 65534 for Q-S1 MOV video - PH
-            # seen 65535 for K-S1 MOV video - PH
+            65534 => 'Auto 2', #PH (Q-S1 MOV) [how is this different from 65535?]
+            65535 => 'Auto', #PH (K-S1 MOV)
         },
     },
     0x0017 => {
@@ -5724,7 +5757,16 @@ my %binaryDataAttrs = (
             TagTable => 'Image::ExifTool::Pentax::Main',
             Start => 10,
             Base => '$start',
-            ByteOrder => 'BigEndian',
+            ByteOrder => 'Unknown', # K-70 is little-endian, K-x is big-endian
+        },
+    },
+    mknt => { # (Q-S1)
+        Name => 'MakerNotes',
+        SubDirectory => {
+            TagTable => 'Image::ExifTool::Pentax::Main',
+            Start => 10,
+            Base => '$start',
+            ByteOrder => 'Unknown',
         },
     },
 );
@@ -5747,6 +5789,7 @@ my %binaryDataAttrs = (
     GROUPS => { 0 => 'MakerNotes', 2 => 'Camera' },
     0x0c => {
         Name => 'Model',
+        Description => 'Camera Model Name',
         Format => 'string[32]',
     },
 );
@@ -6207,7 +6250,7 @@ tags, and everyone who helped contribute to the LensType values.
 
 =head1 AUTHOR
 
-Copyright 2003-2017, Phil Harvey (phil at owl.phy.queensu.ca)
+Copyright 2003-2018, Phil Harvey (phil at owl.phy.queensu.ca)
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
