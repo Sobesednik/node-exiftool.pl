@@ -1,11 +1,11 @@
 {
   "name": "exiftool.pl",
-  "version": "11.01.0",
+  "version": "11.30.0",
   "description": "A distribution of exiftool perl executable.",
   "main": "index.js",
   "scripts": {
     "test": "mocha test",
-    "download": "rm -rf vendor; curl -L https://downloads.sourceforge.net/project/exiftool/Image-ExifTool-11.01.tar.gz | tar xz; mv Image-ExifTool-11.01 vendor; cd vendor; ls | grep -v 'lib\\|exiftool' | xargs rm -r"
+    "download": "rm -rf vendor; curl -L https://downloads.sourceforge.net/project/exiftool/Image-ExifTool-11.30.tar.gz | tar xz; mv Image-ExifTool-11.30 vendor; cd vendor; ls | grep -v 'lib\\|exiftool' | xargs rm -r"
   },
   "repository": {
     "type": "git",

@@ -19,7 +19,7 @@ use strict;
 use vars qw($VERSION $warnString);
 use Image::ExifTool qw(:DataAccess :Utils);
 
-$VERSION = '1.21';
+$VERSION = '1.24';
 
 sub WarnProc($) { $warnString = $_[0]; }
 
@@ -41,6 +41,14 @@ my %openDocType = (
 my %iWorkFile = (
     'Index/Slide.iwa' => 'KEY',
     'Index/Tables/DataList.iwa' => 'NUMBERS',
+);
+
+my %iWorkType = (
+    NUMBERS => 'NUMBERS',
+    PAGES   => 'PAGES',
+    KEY     => 'KEY',
+    KTH     => 'KTH',
+    NMBTEMPLATE => 'NMBTEMPLATE',
 );
 
 # ZIP metadata blocks
@@ -467,7 +475,7 @@ sub ProcessZIP($$)
         }
 
         # check for an iWork file
-        @members = $zip->membersMatching('^(index\.(xml|apxl)|QuickLook/Thumbnail\.jpg)$');
+        @members = $zip->membersMatching('(?i)^(index\.(xml|apxl)|QuickLook/Thumbnail\.jpg|[^/]+\.(pages|numbers|key)/Index.(zip|xml|apxl))$');
         if (@members) {
             require Image::ExifTool::iWork;
             Image::ExifTool::iWork::Process_iWork($et, $dirInfo);
@@ -491,8 +499,9 @@ sub ProcessZIP($$)
                     ($buff, $status) = $zip->contents($meta);
                     unless ($status) {
                         my %dirInfo = (
-                            DataPt => \$buff,
-                            DirLen => length $buff,
+                            DirName => 'XML',
+                            DataPt  => \$buff,
+                            DirLen  => length $buff,
                             DataLen => length $buff,
                         );
                         # (avoid structure warnings when copying from XML)
@@ -586,7 +595,8 @@ sub ProcessZIP($$)
                     $et->FoundTag($extract{$file} => $buff);
                 }
             } elsif ($file eq 'Index/Document.iwa' and not $iWorkType) {
-                $iWorkType = 'PAGES';
+                my $type = $iWorkType{$$et{FILE_EXT} || ''};
+                $iWorkType = $type || 'PAGES';
             } elsif ($iWorkFile{$file}) {
                 $iWorkType = $iWorkFile{$file};
             }
@@ -675,7 +685,7 @@ Electronic Publication (EPUB), and Sketch design files (SKETCH).
 
 =head1 AUTHOR
 
-Copyright 2003-2018, Phil Harvey (phil at owl.phy.queensu.ca)
+Copyright 2003-2019, Phil Harvey (phil at owl.phy.queensu.ca)
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

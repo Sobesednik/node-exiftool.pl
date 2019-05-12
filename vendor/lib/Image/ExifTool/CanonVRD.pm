@@ -23,7 +23,7 @@ use vars qw($VERSION);
 use Image::ExifTool qw(:DataAccess :Utils);
 use Image::ExifTool::Canon;
 
-$VERSION = '1.31';
+$VERSION = '1.32';
 
 sub ProcessCanonVRD($$;$);
 sub WriteCanonVRD($$;$);
@@ -1521,6 +1521,7 @@ sub ProcessEditData($$$)
         # make a copy for editing in place
         my $buff = substr($$dataPt, $pos, $dirLen);
         $dataPt = $$dirInfo{DataPt} = \$buff;
+        $dataPos += $pos;
         $pos = $$dirInfo{DirStart} = 0;
     }
     my $dirEnd = $pos + $dirLen;
@@ -2241,7 +2242,7 @@ files, and as a trailer in JPEG, CRW, CR2 and TIFF images.
 
 =head1 AUTHOR
 
-Copyright 2003-2018, Phil Harvey (phil at owl.phy.queensu.ca)
+Copyright 2003-2019, Phil Harvey (phil at owl.phy.queensu.ca)
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

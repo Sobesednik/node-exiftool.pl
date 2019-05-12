@@ -42,7 +42,7 @@ use Image::ExifTool qw(:DataAccess :Utils);
 use Image::ExifTool::Exif;
 use Image::ExifTool::GPS;
 
-$VERSION = '2.16';
+$VERSION = '2.21';
 
 sub ProcessMOV($$;$);
 sub ProcessKeys($$$);
@@ -52,7 +52,8 @@ sub ProcessEncodingParams($$$);
 sub ProcessSampleDesc($$$);
 sub ProcessHybrid($$$);
 sub ProcessRights($$$);
-sub ProcessMebx($$$); # (in QuickTimeStream.pl)
+sub Process_mebx($$$); # (in QuickTimeStream.pl)
+sub ProcessTTAD($$$); # (in QuickTimeStream.pl)
 sub ParseItemLocation($$);
 sub ParseItemInfoEntry($$);
 sub ParseItemPropAssoc($$);
@@ -380,9 +381,13 @@ my %eeStd = ( stco => 1, co64 => 1, stsz => 1, stz2 => 1, stsc => 1, stts => 1 )
 # boxes for the various handler types that we want to save when ExtractEmbedded is enabled
 my %eeBox = (
     # (note: vide is only processed if specific atoms exist in the VideoSampleDesc)
-    vide => { %eeStd, JPEG => 1 }, # (add avcC to parse H264 stream)
+    vide => { %eeStd,
+        JPEG => 1,
+        # avcC => 1, # (uncomment to parse H264 stream)
+    },
     text => { %eeStd },
     meta => { %eeStd },
+    sbtl => { %eeStd },
     data => { %eeStd },
     camm => { %eeStd }, # (Insta360)
     ''   => { 'gps ' => 1 }, # (no handler -- top level box)
@@ -391,7 +396,7 @@ my %eeBox = (
 # QuickTime atoms
 %Image::ExifTool::QuickTime::Main = (
     PROCESS_PROC => \&ProcessMOV,
-    WRITE_PROC => \&WriteQuickTime,
+    WRITE_PROC => \&WriteQuickTime, # (only needs to be defined for directories to process when writing)
     GROUPS => { 2 => 'Video' },
     NOTES => q{
         The QuickTime format is used for many different types of audio, video and
@@ -474,6 +479,12 @@ my %eeBox = (
         Name => 'Movie',
         SubDirectory => { TagTable => 'Image::ExifTool::QuickTime::Movie' },
     },
+    moof => {
+        Name => 'MovieFragment',
+        SubDirectory => { TagTable => 'Image::ExifTool::QuickTime::MovieFragment' },
+    },
+    # mfra - movie fragment random access: contains tfra (track fragment random access), and
+    #           mfro (movie fragment random access offset) (ref 5)
     mdat => { Name => 'MovieData', Unknown => 1, Binary => 1 },
     'mdat-size' => {
         Name => 'MovieDataSize',
@@ -583,6 +594,7 @@ my %eeBox = (
         Binary => 1,    # (actually ASCII, but very lengthy)
     },
     # meta - proprietary XML information written by some Flip cameras - PH
+    # beam - 16 bytes found in an iPhone video
 );
 
 # MPEG-4 'ftyp' atom
@@ -793,8 +805,9 @@ my %eeBox = (
     PROCESS_PROC => \&ProcessMOV,
     GROUPS => { 2 => 'Video' },
     NOTES => q{
-        Tags defined by the Spherical Video V2 specification (see
-        https://github.com/google/spatial-media/blob/master/docs/spherical-video-v2-rfc.md).
+        Tags defined by the Spherical Video V2 specification.  See
+        L<https://github.com/google/spatial-media/blob/master/docs/spherical-video-v2-rfc.md>
+        for the specification.
     },
     svhd => {
         Name => 'MetadataSource',
@@ -957,7 +970,7 @@ my %eeBox = (
         Name => 'HTCTrack',
         SubDirectory => { TagTable => 'Image::ExifTool::QuickTime::Track' },
     },
-   'gps ' => {  # GPS data written by Novatek cameras
+   'gps ' => {  # GPS data written by Novatek cameras (parsed in QuickTimeStream.pl)
         Name => 'GPSDataList',
         Unknown => 1,
         Binary => 1,
@@ -966,6 +979,37 @@ my %eeBox = (
     # clip - clipping --> contains crgn (clip region) (ref 12)
     # mvex - movie extends --> contains mehd (movie extends header), trex (track extends) (ref 14)
     # ICAT - 4 bytes: "6350" (Nikon CoolPix S6900), "6500" (Panasonic FT7)
+);
+
+# (ref CFFMediaFormat-2_1.pdf)
+%Image::ExifTool::QuickTime::MovieFragment = (
+    PROCESS_PROC => \&ProcessMOV,
+    WRITE_PROC => \&WriteQuickTime,
+    GROUPS => { 2 => 'Video' },
+    # mfhd - movie fragment header
+    traf => {
+        Name => 'TrackFragment',
+        SubDirectory => { TagTable => 'Image::ExifTool::QuickTime::TrackFragment' },
+    },
+);
+
+# (ref CFFMediaFormat-2_1.pdf)
+%Image::ExifTool::QuickTime::TrackFragment = (
+    PROCESS_PROC => \&ProcessMOV,
+    WRITE_PROC => \&WriteQuickTime,
+    GROUPS => { 2 => 'Video' },
+    # tfhd - track fragment header
+    # edts - edits --> contains elst (edit list) (ref PH)
+    # tfdt - track fragment base media decode time
+    # trik - trick play box
+    # trun - track fragment run box
+    # avcn - AVC NAL unit storage box
+    # secn - sample encryption box
+    # saio - sample auxiliary information offsets box
+    # sbgp - sample to group box
+    # sgpd - sample group description box
+    # sdtp - independent and disposable samples (ref 5)
+    # subs - sub-sample information (ref 5)
 );
 
 # movie header data block
@@ -1272,6 +1316,7 @@ my %eeBox = (
     "\xa9gpt" => 'CameraPitch', #PH
     "\xa9gyw" => 'CameraYaw', #PH
     "\xa9grl" => 'CameraRoll', #PH
+    "\xa9enc" => 'EncoderID', #PH (forum9271)
     # and the following entries don't have the proper 4-byte header for \xa9 tags:
     "\xa9dji" => { Name => 'UserData_dji', Format => 'undef', Binary => 1, Unknown => 1, Hidden => 1 },
     "\xa9res" => { Name => 'UserData_res', Format => 'undef', Binary => 1, Unknown => 1, Hidden => 1 },
@@ -1683,6 +1728,8 @@ my %eeBox = (
         SubDirectory => { TagTable => 'Image::ExifTool::GoPro::GPMF' },
     },
     # free (all zero)
+    "\xa9TSC" => 'StartTimeScale', # (Hero6)
+    "\xa9TSZ" => 'StartTimeSampleSize', # (Hero6)
     # --- HTC ----
     htcb => {
         Name => 'HTCBinary',
@@ -1866,6 +1913,11 @@ my %eeBox = (
     # @etc - 4 bytes all zero (Samsung WB30F)
     # saut - 4 bytes all zero (Samsung SM-N900T)
     # smrd - string "TRUEBLUE" (Samsung SM-C101)
+    # ---- TomTom Bandit Action Cam ----
+    TTMD => {
+        Name => 'TomTomMetaData',
+        SubDirectory => { TagTable => 'Image::ExifTool::QuickTime::TomTom' },
+    },
     # ---- Unknown ----
     # CDET - 128 bytes (unknown origin)
 #
@@ -1898,6 +1950,26 @@ my %eeBox = (
     # 2 - values: 0
     # 3 - values: FileSize minus 12 (why?)
     # 4 - values: 12
+);
+
+# TomTom Bandit Action Cam metadata (ref PH)
+%Image::ExifTool::QuickTime::TomTom = (
+    PROCESS_PROC => \&ProcessMOV,
+    GROUPS => { 2 => 'Video' },
+    NOTES => 'Tags found in TomTom Bandit Action Cam MP4 videos.',
+    TTAD => {
+        Name => 'TomTomAD',
+        SubDirectory => {
+            TagTable => 'Image::ExifTool::QuickTime::Stream',
+            ProcessProc => \&Image::ExifTool::QuickTime::ProcessTTAD,
+        },
+    },
+    TTHL => { Name => 'TomTomHL', Binary => 1, Unknown => 1 }, # (mostly zeros)
+    # (TTID values are different for each video)
+    TTID => { Name => 'TomTomID', ValueConv => 'unpack("x4H*",$val)' },
+    TTVI => { Name => 'TomTomVI', Format => 'int32u', Unknown => 1 }, # seen: "0 1 61 508 508"
+    # TTVD seen: "normal 720p 60fps 60fps 16/9 wide 1x"
+    TTVD => { Name => 'TomTomVD', ValueConv => 'my @a = ($val =~ /[\x20-\x7f]+/g); "@a"' },
 );
 
 # User-specific media data atoms (ref 11)
@@ -5036,7 +5108,7 @@ my %eeBox = (
         Name => 'FaceItem',
         SubDirectory => {
             TagTable => 'Image::ExifTool::QuickTime::Keys',
-            ProcessProc => \&ProcessMebx,
+            ProcessProc => \&Process_mebx,
         },
     },
 );
@@ -5458,6 +5530,7 @@ my %eeBox = (
 # MP4 media information box (ref 5)
 %Image::ExifTool::QuickTime::MediaInfo = (
     PROCESS_PROC => \&ProcessMOV,
+    WRITE_PROC => \&WriteQuickTime,
     GROUPS => { 1 => 'Track#', 2 => 'Video' },
     NOTES => 'MP4 media info box.',
     vmhd => {
@@ -5532,6 +5605,7 @@ my %eeBox = (
 # MP4 sample table box (ref 5)
 %Image::ExifTool::QuickTime::SampleTable = (
     PROCESS_PROC => \&ProcessMOV,
+    WRITE_PROC => \&WriteQuickTime,
     GROUPS => { 2 => 'Video' },
     NOTES => 'MP4 sample table box.',
     stsd => [
@@ -5651,6 +5725,7 @@ my %eeBox = (
         Name => 'PartialSyncSamples',
         ValueConv => 'join " ",unpack("x8N*",$val)',
     },
+    # mark - 8 bytes all zero (GoPro)
 );
 
 # MP4 audio sample description box (ref 5/AtomicParsley 0.9.4 parsley.cpp)
@@ -6311,6 +6386,15 @@ my %eeBox = (
             $_ = substr($val,4); s/\0.*//s; $_;
         },
     },
+    "url\0" => { # (written by GoPro)
+        Name => 'URL',
+        Format => 'undef',  # (necessary to prevent decoding as string!)
+        RawConv => q{
+            # ignore if self-contained (flags bit 0 set)
+            return undef if unpack("N",$val) & 0x01;
+            $_ = substr($val,4); s/\0.*//s; $_;
+        },
+    },
     'urn ' => {
         Name => 'URN',
         Format => 'undef',  # (necessary to prevent decoding as string!)
@@ -6362,6 +6446,7 @@ my %eeBox = (
             nrtm => 'Non-Real Time Metadata', #PH (Sony ILCE-7S) [how is this different from "meta"?]
             pict => 'Picture', # (HEIC images)
             camm => 'Camera Metadata', # (Insta360 MP4)
+            psmd => 'Panasonic Static Metadata', #PH (Leica C-Lux CAM-DC25)
         },
     },
     12 => { #PH
@@ -6526,7 +6611,9 @@ Image::ExifTool::AddCompositeTags('Image::ExifTool::QuickTime');
 #
 sub AUTOLOAD
 {
-    if ($AUTOLOAD eq 'Image::ExifTool::QuickTime::ProcessMebx') {
+    if ($AUTOLOAD eq 'Image::ExifTool::QuickTime::Process_mebx' or
+        $AUTOLOAD eq 'Image::ExifTool::QuickTime::ProcessTTAD')
+    {
         require 'Image/ExifTool/QuickTimeStream.pl';
         no strict 'refs';
         return &$AUTOLOAD(@_);
@@ -6719,7 +6806,12 @@ sub PrintChapter($)
     $dur -= $h * 3600;
     my $m = int($dur / 60);
     my $s = $dur - $m * 60;
-    return sprintf("[%d:%.2d:%06.3f] %s",$h,$m,$s,$title);
+    my $ss = sprintf('%06.3f', $s);
+    if ($ss >= 60) {
+        $ss = '00.000';
+        ++$m >= 60 and $m -= 60, ++$h;
+    }
+    return sprintf("[%d:%.2d:%s] %s",$h,$m,$ss,$title);
 }
 
 #------------------------------------------------------------------------------
@@ -7457,6 +7549,8 @@ sub ProcessMOV($$;$)
         SetByteOrder('MM');
         $$et{PRIORITY_DIR} = 'XMP';   # have XMP take priority
     }
+    $$raf{NoBuffer} = 1 if $et->Options('FastScan'); # disable buffering in FastScan mode
+
     if ($$et{OPTIONS}{ExtractEmbedded}) {
         $ee = 1;
         $unkOpt = $$et{OPTIONS}{Unknown};
@@ -7962,7 +8056,7 @@ information from QuickTime and MP4 video, M4A audio, and HEIC image files.
 
 =head1 AUTHOR
 
-Copyright 2003-2018, Phil Harvey (phil at owl.phy.queensu.ca)
+Copyright 2003-2019, Phil Harvey (phil at owl.phy.queensu.ca)
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

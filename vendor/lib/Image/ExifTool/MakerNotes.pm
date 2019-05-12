@@ -21,7 +21,7 @@ sub ProcessKodakPatch($$$);
 sub WriteUnknownOrPreview($$$);
 sub FixLeicaBase($$;$);
 
-$VERSION = '2.04';
+$VERSION = '2.08';
 
 my $debug;          # set to 1 to enable debugging code
 
@@ -38,9 +38,9 @@ my $debug;          # set to 1 to enable debugging code
         Condition => '$$valPt =~ /^Apple iOS\0/',
         SubDirectory => {
             TagTable => 'Image::ExifTool::Apple::Main',
-            ByteOrder => 'Unknown',
             Start => '$valuePtr + 14',
             Base => '$start - 14',
+            ByteOrder => 'Unknown',
         },
     },
     {
@@ -692,6 +692,15 @@ my $debug;          # set to 1 to enable debugging code
         },
     },
     {
+        Name => 'MakerNoteLeica10', # used by the D-Lux7
+        Condition => '$$valPt =~ /^LEICA CAMERA AG\0/',
+        SubDirectory => {
+            TagTable => 'Image::ExifTool::Panasonic::Main',
+            Start => '$valuePtr + 18',
+            ByteOrder => 'Unknown',
+        },
+    },
+    {
         Name => 'MakerNotePanasonic',
         # (starts with "Panasonic\0")
         Condition => '$$valPt=~/^Panasonic/ and $$self{Model} ne "DC-FT7"',
@@ -809,8 +818,9 @@ my $debug;          # set to 1 to enable debugging code
             return 1;
         },
         NotIFD => 1,
+        IsPhaseOne => 1,    # flag to rebuild these differently
         SubDirectory => { TagTable => 'Image::ExifTool::PhaseOne::Main' },
-        PutFirst => 1, # place immediately after TIFF header
+        PutFirst => 1,      # place immediately after TIFF header
     },
     {
         Name => 'MakerNoteReconyx',
@@ -829,6 +839,25 @@ my $debug;          # set to 1 to enable debugging code
         SubDirectory => {
             TagTable => 'Image::ExifTool::Reconyx::Type2',
             ByteOrder => 'Little-endian',
+        },
+    },
+    {
+        Name => 'MakerNoteReconyx3',
+        Condition => '$$valPt =~ /^RECONYXH2\0/',
+        SubDirectory => {
+            TagTable => 'Image::ExifTool::Reconyx::Type3',
+            ByteOrder => 'Little-endian',
+        },
+    },
+    {
+        Name => 'MakerNoteRicohPentax',
+        # used by cameras such as the Ricoh GR III
+        Condition => '$$valPt=~/^RICOH\0(II|MM)/',
+        SubDirectory => {
+            TagTable => 'Image::ExifTool::Pentax::Main',
+            Start => '$valuePtr + 8',
+            Base => '$start - 8',
+            ByteOrder => 'Unknown',
         },
     },
     {
@@ -890,9 +919,9 @@ my $debug;          # set to 1 to enable debugging code
     },
     {
         Name => 'MakerNoteSamsung2',
-        # Samsung EXIF-format maker notes
+        # Samsung EXIF-format maker notes (
         Condition => q{
-            $$self{Make} eq 'SAMSUNG' and ($$self{TIFF_TYPE} eq 'SRW' or
+            uc $$self{Make} eq 'SAMSUNG' and ($$self{TIFF_TYPE} eq 'SRW' or
             $$valPt=~/^(\0.\0\x01\0\x07\0{3}\x04|.\0\x01\0\x07\0\x04\0{3})0100/s)
         },
         SubDirectory => {
@@ -991,6 +1020,10 @@ my $debug;          # set to 1 to enable debugging code
     {
         Name => 'MakerNoteSony5', # used in SR2 and ARW images
         Condition => '$$self{Make}=~/^SONY/ and $$valPt!~/^\x01\x00/',
+        Condition => q{
+            ($$self{Make}=~/^SONY/ or ($$self{Make}=~/^HASSELBLAD/ and
+            $$self{Model}=~/^(HV|Stellar|Lusso|Lunar)/)) and $$valPt!~/^\x01\x00/
+        },
         SubDirectory => {
             TagTable => 'Image::ExifTool::Sony::Main',
             Start => '$valuePtr',
@@ -1772,7 +1805,7 @@ maker notes in EXIF information.
 
 =head1 AUTHOR
 
-Copyright 2003-2018, Phil Harvey (phil at owl.phy.queensu.ca)
+Copyright 2003-2019, Phil Harvey (phil at owl.phy.queensu.ca)
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
