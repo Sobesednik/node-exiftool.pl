@@ -1,19 +1,21 @@
 # node-exiftool.pl
+Fork of [https://github.com/Sobesednik/node-exiftool.pl](https://github.com/Sobesednik/node-exiftool.pl)
+
 A distribution of _exiftool_ perl executable with lib. Current version is 12.23.
 
-[![npm version](https://badge.fury.io/js/exiftool.pl.svg)](https://badge.fury.io/js/exiftool.pl)
-[![Build Status](https://travis-ci.org/Sobesednik/node-exiftool.pl.svg?branch=master)](https://travis-ci.org/Sobesednik/node-exiftool.pl)
+[![npm version](https://badge.fury.io/js/%40mcmics%2Fexiftool.pl.svg)](https://badge.fury.io/js/%40mcmics%2Fexiftool.pl)
+[![Build Status](https://api.travis-ci.com/MCMicS/node-exiftool.pl.svg?branch=master)](https://travis-ci.com/github/MCMicS/node-exiftool.pl)
 
-You might also be interested in [dist-exiftool](https://www.npmjs.com/package/dist-exiftool)
+You might also be interested in [dist-exiftool](https://www.npmjs.com/package/@mcmics/dist-exiftool)
 which will install an appropriate version of exiftool depending on the platform, and
-[exiftool.exe](https://www.npmjs.com/package/exiftool.exe) for Windows.
+[exiftool.exe](https://www.npmjs.com/package/@mcmics/exiftool.exe) for Windows.
 
 ## Usage
 The module exports a path to the exiftool Perl executable.
 
 ```js
 const exec = require('child_process').execFile;
-const exiftool = require('exiftool.pl');
+const exiftool = require('@mcmics/exiftool.pl');
 
 execFile(exiftool, ['-j', 'image.jpg'], (error, stdout, stderr) => {
 	if (error) {
