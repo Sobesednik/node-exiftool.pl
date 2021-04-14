@@ -1,6 +1,6 @@
 {
   "name": "@mcmics/exiftool.pl",
-  "version": "12.23.1",
+  "version": "12.23.2",
   "description": "A distribution of exiftool perl executable.",
   "main": "index.js",
   "scripts": {
